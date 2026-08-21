@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Junior Ballers 254 | Tournament Manager</title>
+<link rel="icon" type="image/x-icon" href="assets/img/favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/img/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/img/favicon-192.png">
+<link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/styles.css">
+</head>
+<body>
+
+ <nav class="app-nav" id="app-nav">
+    <a href="index.html" class="nav-brand"><img src="assets/img/logo.png" alt="Junior Ballers 254" class="nav-logo"> JB254</a>
+    <div class="app-nav-links">
+      <a href="index.html" class="nav-link" id="nav-home">🏠 Home</a>
+      <a href="stats.html" class="nav-link" id="nav-stats">📊 Stats</a>
+      <a href="teams.html" class="nav-link" id="nav-teams">🏀 Teams</a>
+      <a href="users.html" class="nav-link" id="nav-users" style="display:none;">👥 Users</a>
+      <a href="courts.html" class="nav-link" id="nav-courts" style="display:none;">🏟️ Courts</a>
+    </div>
+    <div id="auth-controls"></div>
+  </nav>
+
+  <!-- Bottom nav bar (mobile only) -->
+  <nav class="bottom-nav">
+    <a href="index.html" class="bottom-nav-item active">
+      <span class="nav-icon">🏠</span>Home
+    </a>
+    <a href="stats.html" class="bottom-nav-item">
+      <span class="nav-icon">📊</span>Stats
+    </a>
+    <a href="teams.html" class="bottom-nav-item">
+      <span class="nav-icon">🏀</span> Teams
+    </a>
+    <a href="login.html" class="bottom-nav-item" id="bottom-nav-auth">
+      <span class="nav-icon">👤</span>Account
+    </a>
+  </nav>
+
+<div class="page-wrapper">
+<div class="app">
+
+  <!-- =====================================================================
+       APP HEADER
+       ===================================================================== -->
+  <div class="app-header">
+    <div>
+      <h1>Junior Ballers 254</h1>
+      <p>From MiniHoops to Rising Stars</p>
+    </div>
+    <div class="app-header-right">
+      <span class="conn-dot" id="conn-dot"></span>
+      <span class="conn-label" id="conn-label">Connecting...</span>
+    </div>
+  </div>
+
+  <!-- Auth bar — populated by App._renderAuthBar() -->
+
+  <!-- =====================================================================
+       HERO — public landing section, sits above the dashboard
+       ===================================================================== -->
+  <div class="hero-section hero-fade-in">
+    <div class="hero-pretitle">JUNIOR BALLERS KENYA</div>
+    <h2 class="hero-headline">Empowering Next-Gen Ballers Across Kenya</h2>
+    <p class="hero-subheadline">
+      Real-time tournament tracking, live bracket progression, and automated
+      team management from U10 to Senior divisions.
+    </p>
+
+    <!-- Live/recent match snippet — real data if available, no photos -->
+    <div id="hero-match-snippet"></div>
+
+    <div class="hero-ctas">
+      <a href="#tournament-list" class="btn primary hero-cta-primary">Explore Tournaments</a>
+      <a href="login.html" class="btn ghost hero-cta-secondary" id="hero-cta-secondary">Organizer Portal / Login</a>
+    </div>
+  </div>
+
+  <!-- Stat counter — real numbers, computed live -->
+  <div id="hero-stats-banner" class="hero-fade-in"></div>
+
+  <!-- Recent champions — real placement data, hidden if none exist yet -->
+  <div id="recent-champions-section" class="hero-fade-in"></div>
+
+  <!-- =====================================================================
+       SCREEN 1: HOME
+       ===================================================================== -->
+  <div class="screen active" id="screen-home">
+
+    <div style="display:flex;align-items:center;justify-content:space-between;
+                margin-bottom:0.75rem;flex-wrap:wrap;gap:8px;">
+      <p class="section-label" style="margin:0">Tournaments</p>
+      <div style="display:flex;gap:8px;">
+        <button class="btn sm ghost" id="btn-organise" onclick="App.openOrganiseModal()">
+          Organise events
+        </button>
+        <button class="btn primary sm" id="btn-new-tournament" onclick="App.goToSetup()">
+          + New tournament
+        </button>
+      </div>
+    </div>
+
+    <div class="success-banner" id="home-success">
+      <span class="banner-icon">✓</span>
+      <span id="home-success-msg"></span>
+    </div>
+
+    <div class="error-banner" id="home-error">
+      <span class="banner-icon">!</span>
+      <span id="home-error-msg"></span>
+    </div>
+
+    <div class="tournament-list" id="tournament-list">
+      <div class="skeleton-card"></div>
+      <div class="skeleton-card"></div>
+      <div class="skeleton-card"></div>
+    </div>
+  </div>
+
+  <!-- =====================================================================
+       SCREEN 2: SETUP
+       ===================================================================== -->
+  <div class="screen" id="screen-setup">
+    <p class="section-label">New tournament</p>
+    <div class="card">
+
+      
+      <label style="font-size:13px;color:var(--text-secondary);display:block;margin-bottom:6px;">
+        Tournament Details
+      </label>
+      <div style="display:grid;grid-template-columns:1fr auto;gap:8px;margin-bottom:0.5rem;">
+        <input type="text" id="event-series" class="tournament-name-input"
+               placeholder="Name e.g. Junior Ballers Bash"
+               maxlength="40" style="margin-bottom:0;"
+               list="event-series-suggestions" autocomplete="off" />
+        <datalist id="event-series-suggestions"></datalist>
+        <input type="text" id="event-edition" class="tournament-name-input"
+               placeholder="Edition e.g 6.0"
+               maxlength="20" style="margin-bottom:0;width:150px;" />
+      </div>
+      <div id="tournament-name-preview"
+           style="font-size:11px;color:var(--text-tertiary);margin-bottom:1rem;min-height:16px;">
+      </div>
+      
+      <!-- Event-name field injected here by App._initSetupScreen() -->
+
+      <!-- Categories — one or more age-group + gender combos, each with its
+           own team count and format. Populated entirely by JS. -->
+      <div style="margin-bottom:0.5rem;">
+        <label style="font-size:13px;color:var(--text-secondary);display:block;margin-bottom:6px;">
+          Categories
+          <span style="font-size:11px;color:var(--text-tertiary);font-style:italic;">
+            — add one row per age group + gender you're running (e.g. U16 Boys, U16 Girls)
+          </span>
+        </label>
+      </div>
+      <div id="categories-list"></div>
+      <button type="button" class="btn ghost" id="btn-add-category"
+              onclick="App.addCategoryRow()" style="width:100%;margin-bottom:1rem;">
+        + Add category
+      </button>
+
+      <div style="margin-bottom:1rem;">
+        <label for="registration-deadline" style="font-size:13px;color:var(--text-secondary);display:block;margin-bottom:6px;">
+          Registration deadline
+          <span style="font-size:11px;color:var(--text-tertiary);font-style:italic;">
+            — optional. Format and team roster lock once this date passes.
+          </span>
+        </label>
+        <input type="date" id="registration-deadline" class="tournament-name-input" style="margin-bottom:0;" />
+      </div>
+
+      <div style="margin-bottom:1rem;">
+        <label for="tournament-banner" style="font-size:13px;color:var(--text-secondary);display:block;margin-bottom:6px;">
+          Banner image
+          <span style="font-size:11px;color:var(--text-tertiary);font-style:italic;">— optional. A placeholder is shown if you skip this.</span>
+        </label>
+        <input type="file" id="tournament-banner" accept="image/png,image/jpeg,image/webp" class="tournament-name-input" style="margin-bottom:0;" />
+      </div>
+
+      <div class="error-banner" id="setup-error">
+        <span class="banner-icon">!</span>
+        <span id="setup-error-msg"></span>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn" onclick="App.goToHome()">← Back</button>
+        <button class="btn primary" onclick="App.goToNames()">Create categories →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =====================================================================
+       SCREEN 3: TEAM NAMES
+       ===================================================================== -->
+  <div class="screen" id="screen-names">
+    <p class="section-label">Manage roster</p>
+    <div class="card">
+      <div id="category-progress" style="font-size:12px;color:var(--accent);font-weight:600;margin-bottom:0.5rem;"></div>
+      <p style="font-size:12px;color:var(--text-tertiary);margin-bottom:1rem;">
+        Add teams as they register — no need to know the final count up front.
+      </p>
+      <div class="error-banner" id="names-error">
+        <span class="banner-icon">!</span>
+        <span id="names-error-msg"></span>
+      </div>
+      <div class="team-inputs-grid" id="team-inputs"></div>
+      <div class="btn-row">
+        <button class="btn" onclick="App.goToHome()">← Back</button>
+        <button class="btn primary" id="btn-generate-roster" onclick="App.generateFixturesForRoster()">
+          Generate fixtures →
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =====================================================================
+       SCREEN 4: FIXTURES
+       ===================================================================== -->
+  <div class="screen" id="screen-fixtures">
+
+    <div class="schedule-header">
+      <div>
+        <div class="schedule-title" id="sched-title"></div>
+        <div class="schedule-meta"  id="sched-meta"></div>
+      </div>
+      <div class="btn-row">
+        <span class="status-badge badge-pending" id="tournament-status-badge">pending</span>
+        <button class="btn sm ghost" id="btn-manage-teams" onclick="App.openManageTeamsModal()" style="display:none;">👥 Manage teams</button>
+        <button class="btn sm ghost" id="btn-results" onclick="App.openResultsModal()" style="display:none;">📄 Results</button>
+        <a href="stats.html" class="btn sm ghost">📊 Stats</a>
+        <a id="bracket-page-link" class="btn sm ghost" href="#">
+          Full bracket
+        </a>
+        <button class="btn sm" onclick="App.goToHome()">← Home</button>
+      </div>
+    </div>
+
+    <div class="success-banner" id="fixtures-success">
+      <span class="banner-icon">✓</span>
+      <span id="fixtures-success-msg"></span>
+    </div>
+    <div class="error-banner" id="fixtures-error">
+      <span class="banner-icon">!</span>
+      <span id="fixtures-error-msg"></span>
+    </div>
+
+    <div class="stats-row" id="stats-row"></div>
+    <div class="tab-row"   id="tab-row"></div>
+    <div id="tab-panels"></div>
+
+    <!-- Debug log panel -->
+    <div class="log-toggle" onclick="UI.toggleLog()">
+      <span id="log-arrow">&gt;&gt;</span> Debug log
+    </div>
+    <div class="log-panel" id="log-panel">
+      <div class="log-actions">
+        <button class="log-btn" onclick="Logger.copyToClipboard()">Copy</button>
+        <button class="log-btn" onclick="Logger.clear()">Clear</button>
+      </div>
+      <div id="log-entries"></div>
+    </div>
+
+  </div>
+
+</div><!-- /.app -->
+</div><!-- /.page-wrapper -->
+
+<!-- =========================================================================
+     SCORE ENTRY MODAL
+     ========================================================================= -->
+<!-- Manage teams override — admin-only, works even after fixtures exist.
+     Adding a team here does NOT touch already-generated fixtures/bracket. -->
+<!-- Results — download or email a completed category's results -->
+<div class="modal-overlay" id="results-overlay">
+  <div class="modal">
+    <h2>Results</h2>
+    <p style="font-size:12px;color:var(--text-tertiary);margin-bottom:1rem;">
+      Standings and every match result, ready to download or share.
+    </p>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:1rem;">
+      <button class="btn primary" style="width:100%;" onclick="App.downloadResultsHTML()">
+        📄 Download as report (HTML — open and "Print → Save as PDF" for a PDF copy)
+      </button>
+      <button class="btn ghost" style="width:100%;" onclick="App.downloadResultsCSV()">
+        📊 Download as spreadsheet (CSV)
+      </button>
+      <button class="btn ghost" style="width:100%;" onclick="App.emailResults()">
+        ✉️ Open in email (opens your email app with results in the body)
+      </button>
+    </div>
+    <p style="font-size:11px;color:var(--text-tertiary);font-style:italic;margin-bottom:1rem;">
+      "Open in email" fills in your default email app with a text summary — browsers can't attach
+      files automatically. Attach the downloaded report yourself if you want the formatted version sent too.
+    </p>
+    <button class="btn ghost" style="width:100%;" onclick="App.closeResultsModal()">Close</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="manage-teams-overlay">
+  <div class="modal">
+    <h2>Manage teams</h2>
+    <div class="error-banner" id="manage-teams-error"><span id="manage-teams-error-msg"></span></div>
+    <div style="background:var(--bg-warning);border-radius:var(--radius-md);padding:10px 12px;margin-bottom:1rem;font-size:12px;color:var(--text-warning);">
+      ⚠️ Fixtures already exist for this category. Adding a team here adds them to the roster only —
+      it does not add them into the already-generated bracket/schedule.
+    </div>
+    <div id="manage-teams-deadline"></div>
+    <div id="manage-teams-list" style="max-height:240px;overflow-y:auto;margin-bottom:1rem;"></div>
+    <div style="display:flex;gap:8px;">
+      <select id="manage-teams-add-select" class="tournament-name-input" style="margin-bottom:0;flex:1;">
+        <option value="">Add a registered team…</option>
+      </select>
+      <button class="btn sm primary" onclick="App.addManagedTeam()">+ Add</button>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:1.25rem;">
+      <button class="btn ghost" style="flex:1;" onclick="App.closeManageTeamsModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Re-seed confirmation — shown when correcting a bracket match's result
+     would invalidate already-played downstream matches. Nothing is reset
+     until this is explicitly confirmed. -->
+<div class="modal-overlay" id="reseed-confirm-overlay">
+  <div class="modal">
+    <h2>⚠️ This will reset downstream matches</h2>
+    <p style="font-size:13px;color:var(--text-secondary);margin-bottom:0.75rem;">
+      Changing this result invalidates the following already-played matches. Their scores
+      will be cleared and they'll need to be replayed with the corrected team:
+    </p>
+    <ul id="reseed-impact-list" style="font-size:13px;margin:0 0 1.25rem 1.2rem;padding:0;"></ul>
+    <div style="display:flex;gap:8px;">
+      <button class="btn ghost" style="flex:1;" onclick="App.closeReseedConfirm()">Cancel</button>
+      <button class="btn danger" style="flex:1;" onclick="App.confirmReseed()">Reset &amp; save</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-overlay" onclick="UI.closeModal(event)">
+  <div class="modal">
+    <h2 id="modal-title">Enter match result</h2>
+
+    <div class="modal-edit-note" id="modal-edit-note">
+      ⚠️ You are editing an existing result. In an elimination bracket, the
+      previously advanced team will be removed from the next round.
+    </div>
+
+    <div class="modal-teams">
+      <div class="modal-team-name" id="modal-home-name">Team A</div>
+      <div class="modal-vs">vs</div>
+      <div class="modal-team-name" id="modal-away-name">Team B</div>
+    </div>
+
+    <div class="score-inputs">
+      <input type="number" class="score-input" id="score-home" min="0" placeholder="0" />
+      <div class="score-sep">–</div>
+      <input type="number" class="score-input" id="score-away" min="0" placeholder="0" />
+    </div>
+
+    <div style="display:flex;gap:8px;margin-top:1rem;">
+      <div style="flex:1;">
+        <label style="font-size:12px;color:var(--text-secondary);display:block;margin-bottom:4px;">Time (optional)</label>
+        <input type="text" id="modal-scheduled-time" placeholder="e.g. 14:30 EAT" class="tournament-name-input" style="margin-bottom:0;" />
+      </div>
+      <div style="flex:1;">
+        <label style="font-size:12px;color:var(--text-secondary);display:block;margin-bottom:4px;">Court (optional)</label>
+        <select id="modal-court" class="tournament-name-input" style="margin-bottom:0;">
+          <option value="">— Not assigned yet —</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="modal-error" id="modal-error"></div>
+
+    <div class="btn-row">
+      <button class="btn" onclick="UI.closeModal()">Cancel</button>
+      <button class="btn primary" id="btn-save-result" onclick="App.saveResult()">
+        Save result
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- =========================================================================
+     ORGANISE EVENTS MODAL
+     ========================================================================= -->
+<div id="organise-overlay" style="
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);
+  z-index:200;overflow-y:auto;padding:1rem;
+" onclick="App.closeOrganiseModal(event)">
+  <div style="
+    background:var(--bg-primary);border-radius:var(--radius-lg);
+    max-width:560px;margin:2rem auto;padding:1.5rem;
+    border:0.5px solid var(--border-light);
+  " onclick="event.stopPropagation()">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;">
+      <h2 style="font-size:16px;font-weight:600;margin:0;">Organise into events</h2>
+      <button class="btn sm ghost" onclick="App.closeOrganiseModal()">✕</button>
+    </div>
+    <p style="font-size:13px;color:var(--text-secondary);margin-bottom:1.25rem;">
+      Assign an event name to group tournaments together.
+      Leave blank to keep a tournament standalone.
+    </p>
+    <div id="organise-list" style="display:grid;gap:8px;margin-bottom:1.25rem;">
+      <div style="color:var(--text-tertiary);font-size:13px;">Loading...</div>
+    </div>
+    <div id="organise-error" style="display:none;color:var(--danger);font-size:12px;margin-bottom:0.75rem;"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;">
+      <button class="btn sm ghost" onclick="App.closeOrganiseModal()">Cancel</button>
+      <button class="btn sm primary" id="btn-save-organise" onclick="App.saveOrganise()">
+        Save changes
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- =========================================================================
+     SCRIPTS — load in dependency order
+     1. pocketbase.umd.js  — PocketBase SDK
+     2. config.js          — CONFIG + escHtml
+     3. logger.js          — Logger
+     4. auth.js            — pb client + Auth
+     5. state.js           — State, FORMATS, suggestFormat, UI
+     6. generators.js      — fixture generators
+     7. db.js              — DB + migration functions
+     8. app.js             — App controller + boot
+     ========================================================================= -->
+<script src="assets/js/pocketbase.umd.js"></script>
+<script src="assets/js/config.js"></script>
+<script src="assets/js/logger.js"></script>
+<script src="assets/js/auth.js"></script>
+<script src="assets/js/state.js"></script>
+<script src="assets/js/generators.js"></script>
+<script src="assets/js/db.js"></script>
+<script src="assets/js/app.js"></script>
+
+</body>
+</html>

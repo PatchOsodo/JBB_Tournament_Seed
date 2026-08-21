@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Users — Junior Ballers 254</title>
+<link rel="icon" type="image/x-icon" href="assets/img/favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/img/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/img/favicon-192.png">
+<link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/styles.css">
+</head>
+<body>
+ <nav class="app-nav" id="app-nav">
+    <a href="index.html" class="nav-brand"><img src="assets/img/logo.png" alt="Junior Ballers 254" class="nav-logo"> JB254</a>
+    <div class="app-nav-links">
+      <a href="index.html" class="nav-link" id="nav-home">🏠 Home</a>
+      <a href="stats.html" class="nav-link" id="nav-stats">📊 Stats</a>
+      <a href="teams.html" class="nav-link" id="nav-teams">🏀 Teams</a>
+      <a href="users.html" class="nav-link" id="nav-users" style="display:none;">👥 Users</a>
+      <a href="courts.html" class="nav-link" id="nav-courts" style="display:none;">🏟️ Courts</a>
+    </div>
+    <div id="auth-controls"></div>
+  </nav>
+
+  <!-- Bottom nav bar (mobile only) -->
+  <nav class="bottom-nav">
+    <a href="index.html" class="bottom-nav-item">
+      <span class="nav-icon">🏠</span>Home
+    </a>
+    <a href="stats.html" class="bottom-nav-item">
+      <span class="nav-icon">📊</span>Stats
+    </a>
+    <a href="teams.html" class="bottom-nav-item">
+      <span class="nav-icon">🏀</span> Teams
+    </a>
+    <a href="login.html" class="bottom-nav-item" id="bottom-nav-auth">
+      <span class="nav-icon">👤</span>Account
+    </a>
+  </nav>
+
+<div class="page-wrapper">
+<div class="app">
+
+  <!-- APP HEADER -->
+  <div class="app-header">
+    <div>
+      <h1>Users</h1>
+      <p>Manage roles and score-inputter tournament access</p>
+    </div>
+    <button class="btn primary" onclick="Users.openCreateModal()">+ Create user</button>
+  </div>
+
+  <!-- Not-an-admin notice -->
+  <div class="empty-state" id="not-admin-notice" style="display:none;">
+    <span class="empty-icon">🔒</span>
+    This page is only available to tournament admins.
+  </div>
+
+  <!-- Error banner -->
+  <div class="error-banner" id="users-error">
+    <span id="users-error-msg"></span>
+  </div>
+
+  <!-- User list -->
+  <div id="users-list"></div>
+
+</div>
+</div>
+
+<!-- Create user modal -->
+<div class="modal-overlay" id="create-modal-overlay">
+  <div class="modal">
+    <h2>Create user</h2>
+    <div class="modal-error" id="create-modal-error"></div>
+    <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:1.25rem;">
+      <div>
+        <label style="font-size:13px;color:var(--text-secondary);display:block;margin-bottom:4px;">Display name</label>
+        <input type="text" id="create-name" class="tournament-name-input" style="margin-bottom:0;" />
+      </div>
+      <div>
+        <label style="font-size:13px;color:var(--text-secondary);display:block;margin-bottom:4px;">Role</label>
+        <select id="create-role" class="tournament-name-input" style="margin-bottom:0;">
+          <option value="score_inputter">Score Inputter</option>
+          <option value="tournament_admin">Tournament Admin</option>
+          <option value="super_admin">Super Admin</option>
+          <option value="fan">Fan</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:13px;color:var(--text-secondary);display:block;margin-bottom:4px;">
+          Username
+          <span style="font-size:11px;color:var(--text-tertiary);font-style:italic;">— what they'll actually type to sign in. Simpler than email for score collectors.</span>
+        </label>
+        <input type="text" id="create-username" class="tournament-name-input" style="margin-bottom:0;" placeholder="e.g. scorer1" />
+      </div>
+      <div>
+        <label style="font-size:13px;color:var(--text-secondary);display:block;margin-bottom:4px;">
+          Email
+          <span style="font-size:11px;color:var(--text-tertiary);font-style:italic;">— required by the system, doesn't need to be a real inbox for a scorer account.</span>
+        </label>
+        <input type="email" id="create-email" class="tournament-name-input" style="margin-bottom:0;" placeholder="e.g. scorer1@internal.jbb" />
+      </div>
+      <div>
+        <label style="font-size:13px;color:var(--text-secondary);display:block;margin-bottom:4px;">Password</label>
+        <input type="password" id="create-password" class="tournament-name-input" style="margin-bottom:0;" placeholder="At least 8 characters" />
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn ghost" style="flex:1;" onclick="Users.closeCreateModal()">Cancel</button>
+      <button class="btn primary" style="flex:1;" onclick="Users.createUser()">Create</button>
+    </div>
+  </div>
+</div>
+
+<!-- Assign-tournaments modal -->
+<div class="modal-overlay" id="assign-modal-overlay">
+  <div class="modal">
+    <h2 id="assign-modal-title">Assign tournaments</h2>
+    <div class="modal-error" id="assign-modal-error"></div>
+    <div id="assign-tournament-list" style="max-height:320px;overflow-y:auto;margin-bottom:1.25rem;"></div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn ghost" style="flex:1;" onclick="Users.closeAssignModal()">Cancel</button>
+      <button class="btn primary" style="flex:1;" onclick="Users.saveAssignment()">Save</button>
+    </div>
+  </div>
+</div>
+
+<script src="assets/js/pocketbase.umd.js"></script>
+<script src="assets/js/config.js"></script>
+<script src="assets/js/logger.js"></script>
+<script src="assets/js/auth.js"></script>
+<script src="assets/js/users.js"></script>
+</body>
+</html>

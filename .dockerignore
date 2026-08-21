@@ -1,0 +1,9 @@
+pb_data/
+*.bak
+*.tar.gz
+junk.bkp/
+nohup.out
+.git/
+.gitignore
+*.exe
+pocketbasemac

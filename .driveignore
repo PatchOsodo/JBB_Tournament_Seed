@@ -1,0 +1,42 @@
+# Kabatu Farm — exclude list for local -> Google Drive sync
+# Used with: rclone sync --exclude-from=.driveignore  (or rsync --exclude-from=.driveignore)
+
+# Dependencies (regenerable via npm install)
+node_modules/
+node_modules/**
+
+# PocketBase runtime data (real farm records — never belongs in a code sync)
+pb_data/
+pb_data/**
+pocketbase/pb_data/
+pocketbase/pb_data/**
+
+# Build output / caches (regenerable via next build)
+.next/
+.next/**
+tsconfig.tsbuildinfo
+dist/
+dist/**
+build/
+build/**
+.turbo/
+.turbo/**
+
+# Env files with real secrets — never sync these to Drive
+.env
+.env.local
+.env.production
+.env*.local
+
+# VCS / editor / OS cruft
+.git/
+.git/**
+.DS_Store
+*.log
+npm-debug.log*
+.vscode/
+.idea/
+
+# Docker volumes if bind-mounted locally under the repo
+pgdata/
+volumes/

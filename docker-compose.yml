@@ -1,0 +1,16 @@
+services:
+  jbb-tournaments:
+    build: .
+    image: jbb-tournaments:latest
+    container_name: jbb-tournaments
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:809555550"   # port 8092 assumes Manager already holds 8090 — adjust if not
+    volumes:
+      - pb_data:/pb/pb_data
+    environment:
+      - TZ=Africa/Nairobi
+
+volumes:
+  pb_data:
+    name: jbb_pb_data
