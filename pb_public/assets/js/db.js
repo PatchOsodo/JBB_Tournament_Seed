@@ -222,6 +222,14 @@ const DB = {
     });
   },
 
+  async deleteFixturesForTournament(tournamentId) {
+    const fixtures = await pb.collection('fixtures').getFullList({
+      filter: `tournament="${tournamentId}"`, fields: 'id', requestKey: null,
+    });
+    await Promise.all(fixtures.map(f => pb.collection('fixtures').delete(f.id)));
+    Logger.warn('deleteFixturesForTournament', { tournamentId, count: fixtures.length });
+  },
+
   /* ── COURTS ──────────────────────────────────────────────────────────── */
 
   async getCourts(tournamentId) {

@@ -1578,6 +1578,36 @@ async removeManagedTeam(teamId) {
     }
   },
 
+
+  _hasAnyResult() {
+    return (State.fixtures || []).some(f => !f.is_bye && f.status === 'completed');
+  },
+
+  async regenerateFixtures() {
+    const t = State.activeTournament;
+    if (App._hasAnyResult()) {
+      alert("Can't regenerate — this category already has recorded results. Delete the tournament and start over if you truly need to.");
+      return;
+    }
+    if (!confirm('Delete current fixtures and go back to roster editing? This cannot be undone.')) return;
+
+    const btn = document.getElementById('btn-regenerate');
+    if (btn) { btn.disabled = true; btn.textContent = 'Regenerating…'; }
+
+    try {
+      await DB.deleteFixturesForTournament(t.id);
+      await DB.updateTournament(t.id, { status: 'pending' });
+      State.activeTournament.status = 'pending';
+      State.fixtures = [];
+      await App._renderRosterScreen(t);
+      UI.showScreen('screen-names');
+    } catch (e) {
+      Logger.error('regenerateFixtures failed', { error: e.message });
+      alert(`Couldn't regenerate: ${e.message}`);
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = '↺ Regenerate fixtures'; }
+    }
+  },
   /* ── 11f. FIXTURES SCREEN ────────────────────────────────────────────── */
 
   _renderFixturesScreen(activeTab = 0) {
@@ -1598,6 +1628,9 @@ async removeManagedTeam(teamId) {
 
     const manageTeamsBtn = document.getElementById('btn-manage-teams');
     if (manageTeamsBtn) manageTeamsBtn.style.display = Auth.isAdmin() ? '' : 'none';
+
+    const regenBtn = document.getElementById('btn-regenerate');
+    if (regenBtn) regenBtn.style.display = (Auth.isAdmin() && !App._hasAnyResult()) ? '' : 'none';
 
     const resultsBtn = document.getElementById('btn-results');
     if (resultsBtn) resultsBtn.style.display = t.status === 'completed' ? '' : 'none';
