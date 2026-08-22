@@ -134,6 +134,73 @@ function genGroupStage(teams, teamsPerPool = null) {
   return { type: 'group_stage', groupFixtures, knockout, totalMatches, numGroups };
 }
 
+/**
+ * Builds group_stage groups from a team list that may have partial manual
+ * group_name assignments (letters 'A','B',...). Teams without a group_name
+ * are auto-distributed into whichever pool currently has the FEWEST teams
+ * — ties broken by pool order (A before B) so results are deterministic.
+ * Teams the admin explicitly placed are never moved.
+ *
+ * @param {Array<{name:string, group_name:string|null}>} teams
+ * @param {number} poolCount
+ * @returns {Array<{name:string, teams:string[]}>}
+ */
+function buildManualGroups(teams, poolCount) {
+  const letters = 'ABCDEFGH'.slice(0, poolCount).split('');
+  const groups = {};
+  letters.forEach(l => groups[l] = []);
+
+  const unassigned = [];
+  teams.forEach(t => {
+    if (t.group_name && groups[t.group_name] !== undefined) {
+      groups[t.group_name].push(t.name);
+    } else {
+      unassigned.push(t.name);
+    }
+  });
+
+  unassigned.forEach(name => {
+    let target = letters[0];
+    let minCount = groups[target].length;
+    for (const l of letters) {
+      if (groups[l].length < minCount) { target = l; minCount = groups[l].length; }
+    }
+    groups[target].push(name);
+  });
+
+  Logger.debug('buildManualGroups', {
+    poolCount, unassignedCount: unassigned.length,
+    sizes: letters.map(l => `${l}:${groups[l].length}`),
+  });
+
+  return letters.map(l => ({ name: `Group ${l}`, teams: groups[l] }));
+}
+
+/**
+ * Same output shape as genGroupStage, but takes pre-built groups instead
+ * of computing distribution itself. Used whenever manual pool assignment
+ * exists (i.e. always, now — buildManualGroups handles the "nobody
+ * assigned anything" case too by auto-distributing everyone).
+ */
+function genGroupStageFromGroups(groups) {
+  Logger.debug('genGroupStageFromGroups', { numGroups: groups.length, sizes: groups.map(g => g.teams.length) });
+
+  const groupFixtures = groups.map(g => ({
+    name  : g.name,
+    teams : g.teams,
+    rounds: genRoundRobin(g.teams).rounds,
+  }));
+
+  const advancers = groups.map(g => g.teams.slice(0, 2)).flat();
+  const knockout  = genElimination(advancers);
+
+  const totalGroupMatches = groupFixtures.reduce(
+    (s, g) => s + g.rounds.reduce((rs, r) => rs + r.matches.length, 0), 0
+  );
+  const totalMatches = totalGroupMatches + knockout.totalMatches;
+
+  return { type: 'group_stage', groupFixtures, knockout, totalMatches, numGroups: groups.length };
+}
 /* =============================================================================
    LIVE GROUP STANDINGS COMPUTATION
    Derives team IDs from fixture records directly — robust even if team

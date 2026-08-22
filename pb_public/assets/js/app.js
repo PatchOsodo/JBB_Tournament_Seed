@@ -580,14 +580,13 @@ const App = {
       await pb.collection('teams').update(teamId, { group_name: poolLetter || null });
       const t = State.teams.find(t => t.id === teamId);
       if (t) t.group_name = poolLetter || null;
-      // Refresh the counts line without a full re-render
       App._renderPoolAssignmentUI(State.activeTournament.id, State._manualPoolCount || 2);
+      App._renderFormatPreview('group_stage'); // ← new: preview reflects the reassignment immediately
     } catch (e) {
       Logger.error('savePoolAssignment failed', { error: e.message });
       alert(`Couldn't save pool assignment: ${e.message}`);
     }
   },
-
   _showAccountSheet() {
     // Remove any existing sheet first
     document.getElementById('_acct-sheet')?.remove();
@@ -1052,56 +1051,59 @@ _renderFormatPreview(formatId) {
   const previewEl = document.getElementById('roster-format-preview');
   if (!previewEl) return;
 
-  const names = (State.teams || []).map(t => t.name);
-  if (names.length < 2) {
+  const teams = State.teams || [];
+  if (teams.length < 2) {
     previewEl.innerHTML = `<p style="font-size:12px;color:var(--text-tertiary);font-style:italic;">
-      Add at least 2 teams to see a preview.
+    Add at least 2 teams to see a preview.
     </p>`;
     return;
   }
 
   let generated;
-  if      (formatId === 'round_robin') generated = genRoundRobin(names);
-  else if (formatId === 'elimination') generated = genElimination(names);
-  else                                  generated = genGroupStage(names, State.activeTournament?.teams_per_pool || null);
+  if      (formatId === 'round_robin') generated = genRoundRobin(teams.map(t => t.name));
+  else if (formatId === 'elimination') generated = genElimination(teams.map(t => t.name));
+  else {
+    const poolCount = State._manualPoolCount || 2;
+    const groups = buildManualGroups(teams, poolCount);
+    generated = genGroupStageFromGroups(groups);
+  }
 
   const matchRow = (m) => `<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:12px;">
-    <span>${escHtml(m.a)}</span>
-    <span style="color:var(--text-tertiary);">vs</span>
-    <span>${escHtml(m.b)}</span>
+  <span>${escHtml(m.a)}</span>
+  <span style="color:var(--text-tertiary);">vs</span>
+  <span>${escHtml(m.b)}</span>
   </div>`;
 
   const roundBlock = (round) => `<div style="margin-bottom:8px;">
-    <div style="font-size:11px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.03em;margin-bottom:2px;">
-      ${escHtml(round.label)}
-    </div>
-    ${round.matches.filter(m => !m.isBye).map(matchRow).join('') || '<div style="font-size:12px;color:var(--text-tertiary);">Bye</div>'}
+  <div style="font-size:11px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.03em;margin-bottom:2px;">
+  ${escHtml(round.label)}
+  </div>
+  ${round.matches.filter(m => !m.isBye).map(matchRow).join('') || '<div style="font-size:12px;color:var(--text-tertiary);">Bye</div>'}
   </div>`;
 
   let bodyHtml;
   if (generated.type === 'group_stage') {
     bodyHtml = generated.groupFixtures.map(g => `
-      <div style="margin-bottom:10px;">
-        <div style="font-size:12px;font-weight:600;margin-bottom:4px;">${escHtml(g.name)} (${g.teams.length} teams)</div>
-        ${g.rounds.map(roundBlock).join('')}
-      </div>
+    <div style="margin-bottom:10px;">
+    <div style="font-size:12px;font-weight:600;margin-bottom:4px;">${escHtml(g.name)} (${g.teams.length} teams)</div>
+    ${g.rounds.map(roundBlock).join('')}
+    </div>
     `).join('') + `<p style="font-size:11px;color:var(--text-tertiary);font-style:italic;margin-top:6px;">
-      Then: top 2 from each group advance to a ${generated.knockout.rounds.length}-round knockout stage.
+    Then: top 2 from each group advance to a ${generated.knockout.rounds.length}-round knockout stage.
     </p>`;
   } else {
     bodyHtml = generated.rounds.map(roundBlock).join('');
   }
 
   previewEl.innerHTML = `
-    <div style="font-size:12px;color:var(--text-secondary);margin-bottom:8px;">
-      Preview with the current ${names.length} team${names.length === 1 ? '' : 's'} — ${generated.totalMatches} matches total.
-      Nothing here is saved; this updates as you add teams or switch formats.
-    </div>
-    <div style="max-height:280px;overflow-y:auto;border:0.5px solid var(--border-light);border-radius:var(--radius-md);padding:10px;">
-      ${bodyHtml}
-    </div>`;
+  <div style="font-size:12px;color:var(--text-secondary);margin-bottom:8px;">
+  Preview with the current ${teams.length} team${teams.length === 1 ? '' : 's'} — ${generated.totalMatches} matches total.
+  Nothing here is saved; this updates as you add teams, switch formats, or reassign pools.
+  </div>
+  <div style="max-height:280px;overflow-y:auto;border:0.5px solid var(--border-light);border-radius:var(--radius-md);padding:10px;">
+  ${bodyHtml}
+  </div>`;
 },
-
 async setRosterFormat(tournamentId, formatId) {
   try {
     await DB.updateTournament(tournamentId, { format: formatId });
@@ -1156,26 +1158,39 @@ async generateFixturesForRoster() {
   if (btn) { btn.disabled = true; btn.textContent = 'Generating…'; }
 
   try {
-    const format    = tournament.format || suggestFormat(teams.length);
-    const poolSize  = tournament.teams_per_pool || null;
-    const numGroups = format === 'group_stage'
-      ? (poolSize ? Math.max(1, Math.ceil(teams.length / poolSize)) : (teams.length <= 8 ? 2 : teams.length <= 12 ? 3 : 4))
-      : null;
+    const format = tournament.format || suggestFormat(teams.length);
+    let generated;
 
-    const teamMap = {};
-    for (let i = 0; i < teams.length; i++) {
-      const groupName = numGroups ? 'ABCDEFGH'[i % numGroups] : null;
-      if (groupName && teams[i].group_name !== groupName) {
-        await pb.collection('teams').update(teams[i].id, { group_name: groupName });
+    if (format === 'group_stage') {
+      const poolCount = State._manualPoolCount
+      || new Set(teams.map(t => t.group_name).filter(Boolean)).size
+      || 2;
+      const groups = buildManualGroups(teams, poolCount);
+
+      // Persist the FINAL group for every team — including ones that were
+      // left "Unassigned" and got auto-placed by buildManualGroups — so
+      // teams.group_name always matches what actually got generated.
+      const finalGroupOf = {};
+      groups.forEach(g => {
+        const letter = g.name.replace('Group ', '');
+        g.teams.forEach(name => { finalGroupOf[name] = letter; });
+      });
+      for (const t of teams) {
+        const finalGroup = finalGroupOf[t.name] || null;
+        if (finalGroup && t.group_name !== finalGroup) {
+          await pb.collection('teams').update(t.id, { group_name: finalGroup });
+        }
       }
-      teamMap[teams[i].name] = teams[i].id;
+
+      generated = genGroupStageFromGroups(groups);
+    } else if (format === 'elimination') {
+      generated = genElimination(teams.map(t => t.name));
+    } else {
+      generated = genRoundRobin(teams.map(t => t.name));
     }
 
-    const names = teams.map(t => t.name);
-    let generated;
-    if      (format === 'round_robin') generated = genRoundRobin(names);
-    else if (format === 'elimination') generated = genElimination(names);
-    else                                generated = genGroupStage(names, poolSize);
+    const teamMap = {};
+    teams.forEach(t => { teamMap[t.name] = t.id; });
 
     await App._persistFixtures(tournament.id, generated, teamMap);
     await DB.updateTournament(tournament.id, { status: 'active' });
@@ -1185,7 +1200,7 @@ async generateFixturesForRoster() {
     App._renderFixturesScreen();
     UI.showScreen('screen-fixtures');
     UI.showSuccess('fixtures-success', 'fixtures-success-msg',
-      `"${tournament.name}" — ${generated.totalMatches} matches generated.`);
+                   `"${tournament.name}" — ${generated.totalMatches} matches generated.`);
 
   } catch (e) {
     Logger.error('generateFixturesForRoster failed', { error: e.message });
@@ -1194,7 +1209,6 @@ async generateFixturesForRoster() {
     if (btn) { btn.disabled = false; btn.textContent = 'Generate fixtures →'; }
   }
 },
-
 // ── Manage teams override (admin-only, works after fixtures exist too) ──
 // This is the explicit "bypass the deadline lock when necessary" affordance
 // for super_admin (always allowed) / tournament_admin (allowed pre-deadline,
