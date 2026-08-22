@@ -5,7 +5,7 @@ services:
     container_name: jbb-tournaments-seed
     restart: unless-stopped
     ports:
-      - "127.0.0.1:8097:8090"   # port 8097 assumes Manager already holds 8090 — adjust if not
+      - "0.0.0.0:8097:8090"   # port 8097 assumes Manager already holds 8090 — adjust if not
     volumes:
       - pb_data:/pb/pb_data
     environment:

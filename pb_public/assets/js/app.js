@@ -1010,6 +1010,36 @@ async _renderRosterScreen(tournament) {
       </div>
       </div>
 
+      <div class="roster-header-row">
+      <div>
+      <div style="font-size:13px;font-weight:600;margin-bottom:8px;">
+      Roster — ${teams.length} team${teams.length === 1 ? '' : 's'} registered
+      ${tournament.max_teams ? ` / ${tournament.max_teams} expected` : ''}
+      </div>
+      <div class="roster-team-list">
+      ${teams.length ? teams.map(t => `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:0.5px solid var(--border-light);font-size:13px;">
+        <span>${escHtml(t.name)}</span>
+        <button class="btn sm ghost" onclick="App.removeRosterTeam('${t.id}', '${tournament.id}')">Remove</button>
+        </div>
+        `).join('') : '<p style="font-size:12px;color:var(--text-tertiary);">No teams yet — add them as they register below.</p>'}
+      </div>
+      </div>
+      <div>
+      <div style="font-size:13px;font-weight:600;margin-bottom:8px;">Add a registered team</div>
+      ${available.length ? `
+        <select id="roster-add-select" class="tournament-name-input" style="margin-bottom:6px;">
+        <option value="">Select a team…</option>
+        ${available.map(mt => `<option value="${mt.id}">${escHtml(mt.name)}</option>`).join('')}
+        </select>
+        <button class="btn primary" style="width:100%;" onclick="App.addRosterTeam('${tournament.id}')">+ Add to roster</button>
+        ` : `<p style="font-size:12px;color:var(--text-tertiary);">
+        Every registered team is already on this roster.
+        <a href="teams.html" style="color:var(--accent);">Register another team</a>
+        </p>`}
+      </div>
+      </div>
+
       <div class="pool-assignment-row roster-matchup-row">
       <div id="roster-pool-assignment-wrap" style="display:none;">
       </div>
@@ -1018,34 +1048,7 @@ async _renderRosterScreen(tournament) {
       <div id="roster-format-preview"></div>
       </div>
       </div>
-
-      <div style="margin-bottom:1rem;margin-top:1.5rem;">
-      <div style="font-size:13px;font-weight:600;margin-bottom:8px;">
-      Roster — ${teams.length} team${teams.length === 1 ? '' : 's'} registered
-      ${tournament.max_teams ? ` / ${tournament.max_teams} expected` : ''}
-      </div>
-      ${teams.length ? teams.map(t => `
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:0.5px solid var(--border-light);font-size:13px;">
-        <span>${escHtml(t.name)}</span>
-        <button class="btn sm ghost" onclick="App.removeRosterTeam('${t.id}', '${tournament.id}')">Remove</button>
-        </div>
-        `).join('') : '<p style="font-size:12px;color:var(--text-tertiary);">No teams yet — add them as they register below.</p>'}
-        </div>
-
-        <div style="margin-bottom:1rem;">
-        <div style="font-size:13px;font-weight:600;margin-bottom:8px;">Add a registered team</div>
-        ${available.length ? `
-          <select id="roster-add-select" class="tournament-name-input" style="margin-bottom:6px;">
-          <option value="">Select a team…</option>
-          ${available.map(mt => `<option value="${mt.id}">${escHtml(mt.name)}</option>`).join('')}
-          </select>
-          <button class="btn primary" style="width:100%;" onclick="App.addRosterTeam('${tournament.id}')">+ Add to roster</button>
-          ` : `<p style="font-size:12px;color:var(--text-tertiary);">
-          Every registered team is already on this roster.
-          <a href="teams.html" style="color:var(--accent);">Register another team</a>
-          </p>`}
-          </div>
-          `;
+      `;
       App._renderRosterFormatGrid(tournament.id, format, n);
 },
 

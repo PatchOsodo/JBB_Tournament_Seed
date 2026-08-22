@@ -1,7 +1,7 @@
 /*
  * =============================================================================
  * BASKETBALL TOURNAMENT MANAGER — styles.css
- * Version : 3.0.1
+ * Version : 3.0.2
  *
  * TABLE OF CONTENTS
  * -----------------
@@ -2265,12 +2265,27 @@ select.tournament-name-input {
 .team-inputs-grid > .pool-assignment-row {
   grid-column: 1 / -1;
 }
-/* Roster list + Add-team panel: same problem as the pool-assignment rows —
- *  plain sibling divs inside .team-inputs-grid get force-paired side by
- *  side. Give them the full row each so Roster sits above Add-team,
- *  full width, matching the rest of the screen. */
-.team-inputs-grid > .roster-full-row {
-  grid-column: 1 / -1;
+/* Roster + Add-team, combined into one 65:35 row, spanning the outer
+ *  #team-inputs grid the same way .roster-full-row / .roster-matchup-row do. */
+.team-inputs-grid > .roster-header-row {
+  display               : grid;
+  grid-template-columns : 65fr 35fr;
+  gap                    : 1.25rem;
+  align-items            : start;
+  grid-column            : 1 / -1;
+  margin-bottom          : 1.5rem;
+}
+@media (max-width: 768px) {
+  .roster-header-row { grid-template-columns: 1fr; }
+}
+
+/* Roster list itself: cap to ~5 rows, then scroll. Each row is roughly
+ *  33px tall (6px+6px padding, ~19px line height, 0.5px border), so 5 rows
+ *  ≈ 165px — rounded up slightly to avoid clipping a row mid-line. */
+.roster-team-list {
+  max-height : 175px;
+  overflow-y : auto;
+  padding-right: 4px; /* keeps text clear of the scrollbar */
 }
 /* Pool assignment / Matchup preview row: also spans full width, but
  *  instead of squishing its two panels (which is what wrapped team names
