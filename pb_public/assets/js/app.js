@@ -1044,27 +1044,6 @@ async _renderRosterScreen(tournament) {
       App._renderRosterFormatGrid(tournament.id, format, n);
 },
 
-_renderRosterFormatGrid(tournamentId, current, teamCount) {
-  const gridEl    = document.getElementById('roster-format-grid');
-  if (!gridEl) return;
-  const suggested = teamCount ? suggestFormat(teamCount) : null;
-
-  gridEl.innerHTML = FORMATS.map(f => {
-    const isSel = f.id === current;
-    return `<button type="button" class="btn sm ${isSel ? 'primary' : 'ghost'}"
-                     onclick="App.setRosterFormat('${tournamentId}', '${f.id}')">
-              ${f.icon} ${f.name}${f.id === suggested ? ' ★' : ''}
-            </button>`;
-  }).join('');
-
-  const poolRow = document.getElementById('roster-pool-size-row');
-  const poolInput = document.getElementById('roster-pool-size-input');
-  if (poolRow) poolRow.style.display = current === 'group_stage' ? 'block' : 'none';
-  if (poolInput) poolInput.value = State.activeTournament?.teams_per_pool || 4;
-
-  App._renderFormatPreview(current);
-},
-
 // Live preview of what a format would actually produce, given whoever's
 // currently on the roster — nothing here touches the database, it's the
 // same pure generator functions Generate Fixtures uses, just run early
@@ -1131,19 +1110,6 @@ async setRosterFormat(tournamentId, formatId) {
   } catch (e) {
     Logger.error('setRosterFormat failed', { error: e.message });
     alert(`Couldn't update format: ${e.message}`);
-  }
-},
-
-async setPoolSize(tournamentId, value) {
-  const n = parseInt(value, 10);
-  if (!n || n < 2) return;
-  try {
-    await DB.updateTournament(tournamentId, { teams_per_pool: n });
-    State.activeTournament.teams_per_pool = n;
-    App._renderFormatPreview('group_stage');
-  } catch (e) {
-    Logger.error('setPoolSize failed', { error: e.message });
-    alert(`Couldn't update pool size: ${e.message}`);
   }
 },
 
