@@ -499,6 +499,95 @@ const App = {
     }
   },
 
+  _renderRosterFormatGrid(tournamentId, current, teamCount) {
+    const gridEl    = document.getElementById('roster-format-grid');
+    if (!gridEl) return;
+    const suggested = teamCount ? suggestFormat(teamCount) : null;
+
+    gridEl.innerHTML = FORMATS.map(f => {
+      const isSel = f.id === current;
+      return `<button type="button" class="btn sm ${isSel ? 'primary' : 'ghost'}"
+      onclick="App.setRosterFormat('${tournamentId}', '${f.id}')">
+      ${f.icon} ${f.name}${f.id === suggested ? ' ★' : ''}
+      </button>`;
+    }).join('');
+
+    const poolRow = document.getElementById('roster-pool-size-row');
+    const poolInput = document.getElementById('roster-pool-count-input');
+    const assignWrap = document.getElementById('roster-pool-assignment-wrap');
+    const isGroupStage = current === 'group_stage';
+
+    if (poolRow) poolRow.style.display = isGroupStage ? 'block' : 'none';
+    if (assignWrap) assignWrap.style.display = isGroupStage ? 'block' : 'none';
+
+    if (isGroupStage) {
+      const poolCount = State._manualPoolCount || 2;
+      if (poolInput) poolInput.value = poolCount;
+      App._renderPoolAssignmentUI(tournamentId, poolCount);
+    }
+
+    App._renderFormatPreview(current);
+  },
+
+  // Renders one dropdown per roster team, letting the admin assign a pool
+  // letter manually. Reads/writes teams.group_name directly — no schema
+  // change. Teams left on "Unassigned" fall back to automatic snake-draft
+  // in Checkpoint 3, so partial manual assignment is fully supported.
+  _renderPoolAssignmentUI(tournamentId, poolCountRaw) {
+    const poolCount = Math.max(2, Math.min(8, parseInt(poolCountRaw, 10) || 2));
+    State._manualPoolCount = poolCount;
+
+    const wrap = document.getElementById('roster-pool-assignment-wrap');
+    if (!wrap) return;
+
+    const teams = State.teams || [];
+    if (teams.length < 2) {
+      wrap.innerHTML = `<p style="font-size:12px;color:var(--text-tertiary);font-style:italic;">
+      Add at least 2 teams before assigning pools.
+      </p>`;
+      return;
+    }
+
+    const letters = 'ABCDEFGH'.slice(0, poolCount).split('');
+    const poolCounts = {};
+    letters.forEach(l => poolCounts[l] = 0);
+    teams.forEach(t => { if (t.group_name && poolCounts[t.group_name] !== undefined) poolCounts[t.group_name]++; });
+
+    const countsLine = letters.map(l => `Pool ${l}: ${poolCounts[l]}`).join(' · ');
+
+    wrap.innerHTML = `
+    <div style="font-size:13px;font-weight:600;margin-bottom:6px;">Pool assignment</div>
+    <div style="font-size:11px;color:var(--text-tertiary);margin-bottom:8px;">
+    ${countsLine} — leave "Unassigned" to auto-distribute those teams when fixtures are generated.
+    </div>
+    <div style="max-height:260px;overflow-y:auto;border:0.5px solid var(--border-light);border-radius:var(--radius-md);padding:8px;">
+    ${teams.map(t => `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:0.5px solid var(--border-light);font-size:13px;gap:8px;">
+      <span style="flex:1;">${escHtml(t.name)}</span>
+      <select class="tournament-name-input" style="margin-bottom:0;width:140px;"
+      onchange="App.savePoolAssignment('${t.id}', this.value)">
+      <option value="">Unassigned</option>
+      ${letters.map(l => `<option value="${l}" ${t.group_name === l ? 'selected' : ''}>Pool ${l}</option>`).join('')}
+      </select>
+      </div>
+      `).join('')}
+      </div>
+      `;
+  },
+
+  async savePoolAssignment(teamId, poolLetter) {
+    try {
+      await pb.collection('teams').update(teamId, { group_name: poolLetter || null });
+      const t = State.teams.find(t => t.id === teamId);
+      if (t) t.group_name = poolLetter || null;
+      // Refresh the counts line without a full re-render
+      App._renderPoolAssignmentUI(State.activeTournament.id, State._manualPoolCount || 2);
+    } catch (e) {
+      Logger.error('savePoolAssignment failed', { error: e.message });
+      alert(`Couldn't save pool assignment: ${e.message}`);
+    }
+  },
+
   _showAccountSheet() {
     // Remove any existing sheet first
     document.getElementById('_acct-sheet')?.remove();
@@ -888,7 +977,7 @@ async _renderRosterScreen(tournament) {
   State.activeTournament = tournament;
   const [teams, masterTeams] = await Promise.all([
     DB.getTeams(tournament.id),
-    DB.getMasterTeams(),
+                                                 DB.getMasterTeams(),
   ]);
   State.teams       = teams;
   State.masterTeams = masterTeams;
@@ -906,52 +995,53 @@ async _renderRosterScreen(tournament) {
   if (!grid) return;
 
   grid.innerHTML = `
-    <div style="margin-bottom:1rem;">
-      <div style="font-size:13px;font-weight:600;margin-bottom:8px;">
-        Roster — ${teams.length} team${teams.length === 1 ? '' : 's'} registered
-        ${tournament.max_teams ? ` / ${tournament.max_teams} expected` : ''}
-      </div>
-      ${teams.length ? teams.map(t => `
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:0.5px solid var(--border-light);font-size:13px;">
-          <span>${escHtml(t.name)}</span>
-          <button class="btn sm ghost" onclick="App.removeRosterTeam('${t.id}', '${tournament.id}')">Remove</button>
-        </div>
-      `).join('') : '<p style="font-size:12px;color:var(--text-tertiary);">No teams yet — add them as they register below.</p>'}
+  <div style="margin-bottom:1rem;">
+  <div style="font-size:13px;font-weight:600;margin-bottom:8px;">
+  Roster — ${teams.length} team${teams.length === 1 ? '' : 's'} registered
+  ${tournament.max_teams ? ` / ${tournament.max_teams} expected` : ''}
+  </div>
+  ${teams.length ? teams.map(t => `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:0.5px solid var(--border-light);font-size:13px;">
+    <span>${escHtml(t.name)}</span>
+    <button class="btn sm ghost" onclick="App.removeRosterTeam('${t.id}', '${tournament.id}')">Remove</button>
+    </div>
+    `).join('') : '<p style="font-size:12px;color:var(--text-tertiary);">No teams yet — add them as they register below.</p>'}
     </div>
 
     ${App._deadlineEditor(tournament)}
 
     <div style="margin-bottom:1rem;">
-      <div style="font-size:13px;font-weight:600;margin-bottom:8px;">Add a registered team</div>
-      ${available.length ? `
-        <select id="roster-add-select" class="tournament-name-input" style="margin-bottom:6px;">
-          <option value="">Select a team…</option>
-          ${available.map(mt => `<option value="${mt.id}">${escHtml(mt.name)}</option>`).join('')}
-        </select>
-        <button class="btn primary" style="width:100%;" onclick="App.addRosterTeam('${tournament.id}')">+ Add to roster</button>
+    <div style="font-size:13px;font-weight:600;margin-bottom:8px;">Add a registered team</div>
+    ${available.length ? `
+      <select id="roster-add-select" class="tournament-name-input" style="margin-bottom:6px;">
+      <option value="">Select a team…</option>
+      ${available.map(mt => `<option value="${mt.id}">${escHtml(mt.name)}</option>`).join('')}
+      </select>
+      <button class="btn primary" style="width:100%;" onclick="App.addRosterTeam('${tournament.id}')">+ Add to roster</button>
       ` : `<p style="font-size:12px;color:var(--text-tertiary);">
-             Every registered team is already on this roster.
-             <a href="teams.html" style="color:var(--accent);">Register another team</a>
-           </p>`}
-    </div>
+      Every registered team is already on this roster.
+      <a href="teams.html" style="color:var(--accent);">Register another team</a>
+      </p>`}
+      </div>
 
-    <div style="margin-bottom:1rem;">
+      <div style="margin-bottom:1rem;">
       <div style="font-size:13px;font-weight:600;margin-bottom:8px;">Format</div>
       <div id="roster-format-grid" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;"></div>
       <div id="roster-pool-size-row" style="display:none;margin-bottom:10px;">
-        <label style="font-size:12px;color:var(--text-secondary);display:block;margin-bottom:4px;">
-          Teams per pool
-          <span style="font-size:11px;color:var(--text-tertiary);font-style:italic;">— top 2 from each pool advance to knockout</span>
-        </label>
-        <input type="number" id="roster-pool-size-input" min="2" max="32" value="4"
-               class="tournament-name-input" style="margin-bottom:0;max-width:100px;"
-               onchange="App.setPoolSize('${tournament.id}', this.value)">
+      <label style="font-size:12px;color:var(--text-secondary);display:block;margin-bottom:4px;">
+      Number of pools
+      </label>
+      <input type="number" id="roster-pool-count-input" min="2" max="8" value="2"
+      class="tournament-name-input" style="margin-bottom:8px;max-width:100px;"
+      onchange="App._renderPoolAssignmentUI('${tournament.id}', this.value)">
       </div>
       <div id="roster-format-preview"></div>
-    </div>
-  `;
+      </div>
 
-  App._renderRosterFormatGrid(tournament.id, format, n);
+      <div id="roster-pool-assignment-wrap" style="display:none;margin-bottom:1rem;"></div>
+      `;
+
+      App._renderRosterFormatGrid(tournament.id, format, n);
 },
 
 _renderRosterFormatGrid(tournamentId, current, teamCount) {
