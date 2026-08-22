@@ -2265,7 +2265,13 @@ select.tournament-name-input {
 .team-inputs-grid > .pool-assignment-row {
   grid-column: 1 / -1;
 }
-
+/* Roster list + Add-team panel: same problem as the pool-assignment rows —
+ *  plain sibling divs inside .team-inputs-grid get force-paired side by
+ *  side. Give them the full row each so Roster sits above Add-team,
+ *  full width, matching the rest of the screen. */
+.team-inputs-grid > .roster-full-row {
+  grid-column: 1 / -1;
+}
 /* Pool assignment / Matchup preview row: also spans full width, but
  *  instead of squishing its two panels (which is what wrapped team names
  *  like "Hoops For Kids" mid-word), it scrolls horizontally and keeps
