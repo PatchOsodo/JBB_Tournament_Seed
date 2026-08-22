@@ -1010,7 +1010,7 @@ async _renderRosterScreen(tournament) {
       </div>
       </div>
 
-      <div class="pool-assignment-row">
+      <div class="pool-assignment-row roster-matchup-row">
       <div id="roster-pool-assignment-wrap" style="display:none;">
       </div>
       <div id="roster-format-preview-wrap" style="display:block;">

@@ -2255,13 +2255,34 @@ select.tournament-name-input {
 @media (max-width: 768px) {
   .pool-assignment-row { grid-template-columns: 1fr; }
 }
-/* Roster screen fix:
- *  #team-inputs carries .team-inputs-grid, a 2-column grid left over from
- *  the old simple team-name-input screen. _renderRosterScreen() now injects
- *  two .pool-assignment-row blocks (each already a 2-column grid) as direct
- *  children of it, so they get force-paired side by side — 2x2 columns
- *  collapsing into 4 narrow ones. Make each row span the full grid width
- *  so it lays out as its own row instead. */
+/* Roster screen: #team-inputs carries .team-inputs-grid, a 2-column grid
+ *  left over from the old simple team-name-input screen. Both injected
+ *  .pool-assignment-row blocks were getting force-paired side by side as
+ *  grid items, collapsing 2+2 columns into 4 narrow ones.
+ *
+ *  Deadline/Format row: just needs to span full width to go back to its
+ *  own row — grid layout is fine there, plenty of room for two columns. */
 .team-inputs-grid > .pool-assignment-row {
   grid-column: 1 / -1;
+}
+
+/* Pool assignment / Matchup preview row: also spans full width, but
+ *  instead of squishing its two panels (which is what wrapped team names
+ *  like "Hoops For Kids" mid-word), it scrolls horizontally and keeps
+ *  each panel at a readable minimum width. */
+.team-inputs-grid > .pool-assignment-row.roster-matchup-row {
+  display        : flex;
+  gap            : 1.25rem;
+  overflow-x     : auto;
+  padding-bottom : 6px; /* keeps the scrollbar off the content */
+}
+.roster-matchup-row > div {
+  flex      : 0 0 320px;
+  min-width : 320px;
+}
+@media (max-width: 768px) {
+  .roster-matchup-row > div {
+    flex-basis : 280px;
+    min-width  : 280px;
+  }
 }
