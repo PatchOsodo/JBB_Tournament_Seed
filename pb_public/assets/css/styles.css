@@ -2255,3 +2255,13 @@ select.tournament-name-input {
 @media (max-width: 768px) {
   .pool-assignment-row { grid-template-columns: 1fr; }
 }
+/* Roster screen fix:
+ *  #team-inputs carries .team-inputs-grid, a 2-column grid left over from
+ *  the old simple team-name-input screen. _renderRosterScreen() now injects
+ *  two .pool-assignment-row blocks (each already a 2-column grid) as direct
+ *  children of it, so they get force-paired side by side — 2x2 columns
+ *  collapsing into 4 narrow ones. Make each row span the full grid width
+ *  so it lays out as its own row instead. */
+.team-inputs-grid > .pool-assignment-row {
+  grid-column: 1 / -1;
+}

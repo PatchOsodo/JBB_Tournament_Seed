@@ -563,7 +563,7 @@ const App = {
     <div style="max-height:260px;overflow-y:auto;border:0.5px solid var(--border-light);border-radius:var(--radius-md);padding:8px;">
     ${teams.map(t => `
       <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:0.5px solid var(--border-light);font-size:13px;gap:8px;">
-      <span style="flex:1;">${escHtml(t.name)}</span>
+      <span style="flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escHtml(t.name)}</span>
       <select class="tournament-name-input" style="margin-bottom:0;width:140px;"
       onchange="App.savePoolAssignment('${t.id}', this.value)">
       <option value="">Unassigned</option>
