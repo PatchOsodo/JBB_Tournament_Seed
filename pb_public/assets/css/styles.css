@@ -485,6 +485,9 @@ input, button, select, textarea {
   padding         : 6px 1rem;
   background      : var(--bg-secondary);
   border-bottom   : 0.5px solid var(--border-light);
+  position : sticky;
+  top      : 0;
+  z-index  : 150; /* above page content, below modal overlays (200/299/300) */
 }
 
 .nav-brand {
@@ -2239,4 +2242,15 @@ select.tournament-name-input {
   .bc-match     { break-inside: avoid; }
   .bc-zoom-wrap { overflow: visible !important; height: auto !important; }
   .bc-inner     { transform: none !important; }
+}
+
+.pool-assignment-row {
+  display               : grid;
+  grid-template-columns : 1fr 1fr;
+  gap                    : 1rem;
+  align-items            : start;
+  margin-bottom          : 1rem;
+}
+@media (max-width: 768px) {
+  .pool-assignment-row { grid-template-columns: 1fr; }
 }

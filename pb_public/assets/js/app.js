@@ -1034,10 +1034,17 @@ async _renderRosterScreen(tournament) {
       class="tournament-name-input" style="margin-bottom:8px;max-width:100px;"
       onchange="App._renderPoolAssignmentUI('${tournament.id}', this.value)">
       </div>
-      <div id="roster-format-preview"></div>
       </div>
 
-      <div id="roster-pool-assignment-wrap" style="display:none;margin-bottom:1rem;"></div>
+      <div class="pool-assignment-row">
+      <div id="roster-pool-assignment-wrap" style="display:none;">
+      <!-- pool dropdown list renders here via _renderPoolAssignmentUI -->
+      </div>
+      <div id="roster-format-preview-wrap" style="display:block;">
+      <div style="font-size:13px;font-weight:600;margin-bottom:8px;">Matchup preview</div>
+      <div id="roster-format-preview"></div>
+      </div>
+      </div>
       `;
 
       App._renderRosterFormatGrid(tournament.id, format, n);
