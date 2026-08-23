@@ -7,10 +7,10 @@
  */
 
 /* =============================================================================
-   ROUND ROBIN — circle rotation method
-   Every team plays every other team once.
-   Odd team counts get a synthetic BYE to keep pairs even.
-   ============================================================================= */
+ *  ROUND ROBIN — circle rotation method
+ *  Every team plays every other team once.
+ *  Odd team counts get a synthetic BYE to keep pairs even.
+ *  ============================================================================= */
 function genRoundRobin(teams) {
   Logger.debug('genRoundRobin', { count: teams.length });
   const list  = teams.length % 2 === 1 ? [...teams, 'BYE'] : [...teams];
@@ -33,9 +33,9 @@ function genRoundRobin(teams) {
 }
 
 /* =============================================================================
-   SINGLE ELIMINATION — fixed-slot seed tree
-   Pads to next power of 2. BYE slots auto-advance to round 2 on persist.
-   ============================================================================= */
+ *  SINGLE ELIMINATION — fixed-slot seed tree
+ *  Pads to next power of 2. BYE slots auto-advance to round 2 on persist.
+ *  ============================================================================= */
 function genElimination(teams) {
   Logger.debug('genElimination', { count: teams.length });
 
@@ -58,7 +58,7 @@ function genElimination(teams) {
       a, b, isBye,
       nextRound       : 2,
       nextMatchNumber : Math.ceil(matchNumber / 2),
-      nextSlot        : matchNumber % 2 === 1 ? 'home' : 'away',
+                       nextSlot        : matchNumber % 2 === 1 ? 'home' : 'away',
     });
   }
 
@@ -74,14 +74,14 @@ function genElimination(teams) {
         a: 'TBD', b: 'TBD', isBye: false,
         nextRound       : r < totalRounds ? r + 1 : null,
         nextMatchNumber : r < totalRounds ? Math.ceil(m / 2) : null,
-        nextSlot        : m % 2 === 1 ? 'home' : 'away',
+                   nextSlot        : m % 2 === 1 ? 'home' : 'away',
       });
     }
     allRounds.push({ roundNumber: r, label: _roundLabel(matchCount, totalRounds, r), matches });
   }
 
   const totalMatches = round1Matches.filter(m => !m.isBye).length +
-    allRounds.slice(1).reduce((s, r) => s + r.matches.length, 0);
+  allRounds.slice(1).reduce((s, r) => s + r.matches.length, 0);
 
   Logger.info('genElimination done', {
     size, byes,
@@ -105,13 +105,16 @@ function _roundLabel(matchCount, totalRounds, roundNumber) {
 }
 
 /* =============================================================================
-   GROUP STAGE — snake distribution + round robin per group + elimination KO
-   ============================================================================= */
+ *  GROUP STAGE — snake distribution + round robin per group + elimination KO
+ *  Kept for backward compatibility / anywhere still calling the old signature
+ *  directly with a flat team-name array and no manual assignment. New admin
+ *  flows go through buildManualGroups() + genGroupStageFromGroups() below.
+ *  ============================================================================= */
 function genGroupStage(teams, teamsPerPool = null) {
   Logger.debug('genGroupStage', { count: teams.length, teamsPerPool });
   const numGroups = teamsPerPool
-    ? Math.max(1, Math.ceil(teams.length / teamsPerPool))
-    : (teams.length <= 8 ? 2 : teams.length <= 12 ? 3 : 4); // fallback heuristic if no pool size given
+  ? Math.max(1, Math.ceil(teams.length / teamsPerPool))
+  : (teams.length <= 8 ? 2 : teams.length <= 12 ? 3 : 4);
   const groups    = Array.from({ length: numGroups }, () => []);
   teams.forEach((t, i) => groups[i % numGroups].push(t));
 
@@ -138,8 +141,9 @@ function genGroupStage(teams, teamsPerPool = null) {
  * Builds group_stage groups from a team list that may have partial manual
  * group_name assignments (letters 'A','B',...). Teams without a group_name
  * are auto-distributed into whichever pool currently has the FEWEST teams
- * — ties broken by pool order (A before B) so results are deterministic.
- * Teams the admin explicitly placed are never moved.
+ * — ties broken by pool letter order (A before B) so results are
+ * deterministic given the same input. Teams the admin explicitly placed
+ * are never moved from their assigned pool.
  *
  * @param {Array<{name:string, group_name:string|null}>} teams
  * @param {number} poolCount
@@ -179,8 +183,11 @@ function buildManualGroups(teams, poolCount) {
 /**
  * Same output shape as genGroupStage, but takes pre-built groups instead
  * of computing distribution itself. Used whenever manual pool assignment
- * exists (i.e. always, now — buildManualGroups handles the "nobody
- * assigned anything" case too by auto-distributing everyone).
+ * is in play — which is now always, since buildManualGroups handles the
+ * "nobody assigned anything manually" case too by auto-distributing
+ * everyone evenly.
+ *
+ * @param {Array<{name:string, teams:string[]}>} groups
  */
 function genGroupStageFromGroups(groups) {
   Logger.debug('genGroupStageFromGroups', { numGroups: groups.length, sizes: groups.map(g => g.teams.length) });
@@ -201,11 +208,12 @@ function genGroupStageFromGroups(groups) {
 
   return { type: 'group_stage', groupFixtures, knockout, totalMatches, numGroups: groups.length };
 }
+
 /* =============================================================================
-   LIVE GROUP STANDINGS COMPUTATION
-   Derives team IDs from fixture records directly — robust even if team
-   records have missing or incorrect group_name values.
-   ============================================================================= */
+ *  LIVE GROUP STANDINGS COMPUTATION
+ *  Derives team IDs from fixture records directly — robust even if team
+ *  records have missing or incorrect group_name values.
+ *  ============================================================================= */
 function _computeGroupStandings(fixtures, teams, groupName) {
   const allGroupFx = fixtures.filter(f => f.group_name === groupName && !f.is_bye);
   if (!allGroupFx.length) {
@@ -227,37 +235,37 @@ function _computeGroupStandings(fixtures, teams, groupName) {
     if (aId) teamIdsInGroup.add(aId);
   });
 
-  const standingsMap = {};
-  teamIdsInGroup.forEach(id => {
-    const teamRecord = teams.find(t => t.id === id);
-    standingsMap[id] = {
-      teamId     : id,
-      name       : teamRecord?.name || `Team (${id.slice(0, 6)})`,
-      played     : 0,
-      wins       : 0,
-      losses     : 0,
-      ptsFor     : 0,
-      ptsAgainst : 0,
-      get pointDiff() { return this.ptsFor - this.ptsAgainst; },
-    };
-  });
+    const standingsMap = {};
+    teamIdsInGroup.forEach(id => {
+      const teamRecord = teams.find(t => t.id === id);
+      standingsMap[id] = {
+        teamId     : id,
+        name       : teamRecord?.name || `Team (${id.slice(0, 6)})`,
+                           played     : 0,
+                           wins       : 0,
+                           losses     : 0,
+                           ptsFor     : 0,
+                           ptsAgainst : 0,
+                           get pointDiff() { return this.ptsFor - this.ptsAgainst; },
+      };
+    });
 
-  allGroupFx.filter(f => f.status === 'completed').forEach(f => {
-    const home = standingsMap[resolveId(f.home_team)];
-    const away = standingsMap[resolveId(f.away_team)];
-    if (!home || !away) return;
+    allGroupFx.filter(f => f.status === 'completed').forEach(f => {
+      const home = standingsMap[resolveId(f.home_team)];
+      const away = standingsMap[resolveId(f.away_team)];
+      if (!home || !away) return;
 
-    home.played++; away.played++;
-    home.ptsFor    += (f.home_score || 0); home.ptsAgainst += (f.away_score || 0);
-    away.ptsFor    += (f.away_score || 0); away.ptsAgainst += (f.home_score || 0);
+      home.played++; away.played++;
+      home.ptsFor    += (f.home_score || 0); home.ptsAgainst += (f.away_score || 0);
+      away.ptsFor    += (f.away_score || 0); away.ptsAgainst += (f.home_score || 0);
 
-    if ((f.home_score || 0) > (f.away_score || 0)) { home.wins++; away.losses++; }
-    else                                             { away.wins++; home.losses++; }
-  });
+      if ((f.home_score || 0) > (f.away_score || 0)) { home.wins++; away.losses++; }
+      else                                             { away.wins++; home.losses++; }
+    });
 
-  return Object.values(standingsMap).sort((a, b) => {
-    if (b.wins !== a.wins)           return b.wins - a.wins;
-    if (b.pointDiff !== a.pointDiff) return b.pointDiff - a.pointDiff;
-    return b.ptsFor - a.ptsFor;
-  });
+    return Object.values(standingsMap).sort((a, b) => {
+      if (b.wins !== a.wins)           return b.wins - a.wins;
+      if (b.pointDiff !== a.pointDiff) return b.pointDiff - a.pointDiff;
+      return b.ptsFor - a.ptsFor;
+    });
 }

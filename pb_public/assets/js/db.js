@@ -221,7 +221,6 @@ const DB = {
       requestKey: null,
     });
   },
-
   async deleteFixturesForTournament(tournamentId) {
     const fixtures = await pb.collection('fixtures').getFullList({
       filter: `tournament="${tournamentId}"`, fields: 'id', requestKey: null,
