@@ -13,6 +13,9 @@
  * - findMasterTeam/createMasterTeam/getOrCreateMasterTeam match on name only.
  * - All filter strings use no spaces around operators (PocketBase strict mode).
  * - requestKey: null on all getFullList calls to prevent auto-cancellation.
+ * - Phase 2: added getUpcomingGames() for the public homepage's Upcoming
+ *   Games section — real scheduled fixtures across all tournaments only,
+ *   never synthesized.
  * =============================================================================
  */
 
@@ -67,11 +70,34 @@ const DB = {
     }
   },
 
+  // Real scheduled fixtures across ALL tournaments, soonest first — powers
+  // the public homepage's "Upcoming games" section. Deliberately requires
+  // scheduled_start_time to be set: falling back to round/match order for
+  // fixtures with no real time would present "unscheduled" as "upcoming",
+  // which is a fabrication, not a display choice. If no tournament has set
+  // real times yet, this returns an empty list and the section stays
+  // hidden — no placeholder games.
+  async getUpcomingGames(limit = 6) {
+    try {
+      const result = await pb.collection('fixtures').getList(1, limit, {
+        filter    : `status="scheduled" && is_bye=false && home_team!="" && away_team!="" && scheduled_start_time!=""`,
+        sort      : '+scheduled_start_time',
+        expand    : 'home_team,away_team,tournament',
+        requestKey: null,
+      });
+      Logger.debug('DB.getUpcomingGames', { count: result.items.length });
+      return result.items;
+    } catch (e) {
+      Logger.warn('DB.getUpcomingGames failed', { error: e.message });
+      return [];
+    }
+  },
+
   async createTournament(name, format, eventName = null, eventSeries = null, eventEdition = null, registrationDeadline = null, gender = null, ageGroup = null, maxTeams = null) {
-      Logger.info('DB.createTournament', { name, format, eventName, eventSeries, eventEdition, registrationDeadline, gender, ageGroup, maxTeams });
-      return pb.collection('tournaments').create({
-        name,
-        format,
+    Logger.info('DB.createTournament', { name, format, eventName, eventSeries, eventEdition, registrationDeadline, gender, ageGroup, maxTeams });
+    return pb.collection('tournaments').create({
+      name,
+      format,
         status        : 'pending',
         event_name    : eventName    || null,
         event_series  : eventSeries  || null,
@@ -80,8 +106,8 @@ const DB = {
         gender        : gender   || null,
         age_group     : ageGroup || null,
         max_teams     : maxTeams || null,
-      });
-    },
+    });
+  },
 
   async uploadTournamentBanner(tournamentId, file) {
     const formData = new FormData();
@@ -221,6 +247,7 @@ const DB = {
       requestKey: null,
     });
   },
+
   async deleteFixturesForTournament(tournamentId) {
     const fixtures = await pb.collection('fixtures').getFullList({
       filter: `tournament="${tournamentId}"`, fields: 'id', requestKey: null,
@@ -350,7 +377,7 @@ const DB = {
     const resolveId  = v => typeof v === 'object' ? v?.id : v;
 
     const finalFx = fixtures.find(f =>
-      f.round_label === 'Final' && f.status === 'completed'
+    f.round_label === 'Final' && f.status === 'completed'
     );
     if (finalFx) {
       const winnerId = resolveId(finalFx.winner);
@@ -363,16 +390,16 @@ const DB = {
 
     let p = 3;
     fixtures
-      .filter(f => f.round_label === 'Semifinals' && f.status === 'completed')
-      .forEach(f => {
-        const winnerId = resolveId(f.winner);
-        const homeId   = resolveId(f.home_team);
-        const awayId   = resolveId(f.away_team);
-        const loserId  = winnerId === homeId ? awayId : homeId;
-        if (loserId && !placements[loserId]) placements[loserId] = p++;
-      });
+    .filter(f => f.round_label === 'Semifinals' && f.status === 'completed')
+    .forEach(f => {
+      const winnerId = resolveId(f.winner);
+      const homeId   = resolveId(f.home_team);
+      const awayId   = resolveId(f.away_team);
+      const loserId  = winnerId === homeId ? awayId : homeId;
+      if (loserId && !placements[loserId]) placements[loserId] = p++;
+    });
 
-    return placements;
+      return placements;
   },
 
   async getMasterTeamStats(masterTeamId) {
@@ -391,8 +418,8 @@ const DB = {
     try {
       return await pb.collection('favourites').getFullList({
         filter    : `user="${Auth.user().id}"`,
-        expand    : 'tournament',
-        requestKey: null,
+                                                           expand    : 'tournament',
+                                                           requestKey: null,
       });
     } catch (e) {
       Logger.warn('getFavourites failed', { error: e.message });
@@ -403,7 +430,7 @@ const DB = {
   async addFavourite(tournamentId) {
     return pb.collection('favourites').create({
       user      : Auth.user().id,
-      tournament: tournamentId,
+                                              tournament: tournamentId,
     });
   },
 
@@ -565,7 +592,7 @@ const DB = {
 
       const targetFx   = nextRoundFx[targetFixtureIdx];
       const currentVal = typeof targetFx[targetSlot] === 'object'
-        ? targetFx[targetSlot]?.id : targetFx[targetSlot];
+      ? targetFx[targetSlot]?.id : targetFx[targetSlot];
       if (currentVal === winnerTeamId) return;
 
       await pb.collection('fixtures').update(targetFx.id, { [targetSlot]: winnerTeamId });
@@ -613,15 +640,15 @@ const DB = {
     }
 
     const knockoutFx = freshFixtures
-      .filter(f => !f.group_name && !f.is_bye)
-      .sort((a, b) => a.round !== b.round ? a.round - b.round : a.match_number - b.match_number);
+    .filter(f => !f.group_name && !f.is_bye)
+    .sort((a, b) => a.round !== b.round ? a.round - b.round : a.match_number - b.match_number);
 
     if (!knockoutFx.length) return false;
 
     const firstKoRound = Math.min(...knockoutFx.map(f => f.round));
     const firstRoundFx = knockoutFx
-      .filter(f => f.round === firstKoRound)
-      .sort((a, b) => a.match_number - b.match_number);
+    .filter(f => f.round === firstKoRound)
+    .sort((a, b) => a.match_number - b.match_number);
 
     for (let i = 0; i < firstRoundFx.length; i++) {
       await pb.collection('fixtures').update(firstRoundFx[i].id, {
@@ -636,8 +663,8 @@ const DB = {
 };  // ← end of DB object
 
 /* =============================================================================
-   MIGRATION — standalone async functions
-   ============================================================================= */
+ *  MIGRATION — standalone async functions
+ *  ============================================================================= */
 async function migrateExistingTournaments() {
   Logger.info('Migration: checking for broken tournaments');
   let tournaments;
@@ -678,8 +705,8 @@ async function _migrateTournament(tournament) {
 
   const firstKoRound    = Math.min(...knockoutFx.map(f => f.round));
   const knockoutUnseeded = knockoutFx
-    .filter(f => f.round === firstKoRound)
-    .every(f => !f.home_team && !f.away_team);
+  .filter(f => f.round === firstKoRound)
+  .every(f => !f.home_team && !f.away_team);
 
   if (knockoutUnseeded) {
     await _migrateSeeding(tournament.id, allTeams, allFixtures, knockoutFx);
@@ -688,8 +715,8 @@ async function _migrateTournament(tournament) {
 
   const rounds    = [...new Set(knockoutFx.map(f => f.round))].sort((a, b) => a - b);
   const completed = knockoutFx
-    .filter(f => f.status === 'completed' && f.winner)
-    .sort((a, b) => a.round - b.round || a.match_number - b.match_number);
+  .filter(f => f.status === 'completed' && f.winner)
+  .sort((a, b) => a.round - b.round || a.match_number - b.match_number);
 
   for (const fx of completed) {
     const idx = rounds.indexOf(fx.round);
@@ -697,13 +724,13 @@ async function _migrateTournament(tournament) {
 
     const nextRound      = rounds[idx + 1];
     const currentRoundFx = knockoutFx
-      .filter(f => f.round === fx.round)
-      .sort((a, b) => a.match_number - b.match_number);
+    .filter(f => f.round === fx.round)
+    .sort((a, b) => a.match_number - b.match_number);
     const posInRound  = currentRoundFx.findIndex(f => f.id === fx.id);
     const slot        = posInRound % 2 === 0 ? 'home_team' : 'away_team';
     const nextRoundFx = knockoutFx
-      .filter(f => f.round === nextRound)
-      .sort((a, b) => a.match_number - b.match_number);
+    .filter(f => f.round === nextRound)
+    .sort((a, b) => a.match_number - b.match_number);
     const nextFx = nextRoundFx[Math.floor(posInRound / 2)];
     if (!nextFx) continue;
 
@@ -721,7 +748,7 @@ async function _migrateSeeding(tournamentId, allTeams, allFixtures, knockoutFx) 
     allFixtures.filter(f => f.group_name && !f.is_bye).map(f => f.group_name)
   )].sort();
   const groupRankings = groupNames.map(gName =>
-    _computeGroupStandings(allFixtures, allTeams, gName).slice(0, 2)
+  _computeGroupStandings(allFixtures, allTeams, gName).slice(0, 2)
   );
   const firsts  = groupRankings.map(g => g[0]);
   const seconds = groupRankings.map(g => g[1]);
@@ -734,8 +761,8 @@ async function _migrateSeeding(tournamentId, allTeams, allFixtures, knockoutFx) 
 
   const firstKoRound = Math.min(...knockoutFx.map(f => f.round));
   const firstRoundFx = knockoutFx
-    .filter(f => f.round === firstKoRound)
-    .sort((a, b) => a.match_number - b.match_number);
+  .filter(f => f.round === firstKoRound)
+  .sort((a, b) => a.match_number - b.match_number);
 
   for (let i = 0; i < firstRoundFx.length; i++) {
     await pb.collection('fixtures').update(firstRoundFx[i].id, {
@@ -787,9 +814,9 @@ async function _migrateOneTournamentStats(tournament) {
     requestKey: null,
   });
 
-// Old records have no gender/age_group — they get null for both,
-// which groups them under "Uncategorised" in stats rather than
-// mixing them into a real age/gender category.
+  // Old records have no gender/age_group — they get null for both,
+  // which groups them under "Uncategorised" in stats rather than
+  // mixing them into a real age/gender category.
   for (const team of teams) {
     if (team.master_team) continue;
 

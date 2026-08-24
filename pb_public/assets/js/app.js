@@ -20,9 +20,12 @@ const App = {
                 email   : user?.email ?? '(guest)',
     });
 
-    await Shell.injectNav();
-    Shell.renderAuthBar(pb);
-
+    try {
+      await Shell.injectNav();
+      Shell.renderAuthBar(pb);
+    } catch (e) {
+      Logger.error('Shell init failed — nav will be missing', { error: e.message });
+    }
     const online = await DB.healthCheck();
     UI.setConnectionStatus(online);
     if (!online) {
@@ -62,7 +65,52 @@ const App = {
     }
 
     App._loadHeroMatchSnippet();
+    App._loadUpcomingGames();
     App._loadRecentChampions();
+  },
+
+  // Real scheduled fixtures across every tournament, soonest first. Hidden
+  // entirely (not shown with a "no games" placeholder) when nothing has a
+  // real scheduled_start_time set yet — this is a homepage teaser, not a
+  // page whose job is to explain its own absence.
+  async _loadUpcomingGames() {
+    const section = document.getElementById('upcoming-games-section');
+    if (!section) return;
+    try {
+      const games = await DB.getUpcomingGames(6);
+      if (!games.length) { section.innerHTML = ''; return; }
+
+      section.innerHTML = `
+      <div class="upcoming-games-heading">📅 Upcoming games</div>
+      <div class="upcoming-games-grid">
+      ${games.map(App._upcomingGameCard).join('')}
+      </div>`;
+    } catch (e) {
+      Logger.warn('_loadUpcomingGames failed', { error: e.message });
+    }
+  },
+
+  _upcomingGameCard(f) {
+    const home         = f.expand?.home_team?.name || 'TBD';
+    const away         = f.expand?.away_team?.name || 'TBD';
+    const tournamentName = f.expand?.tournament?.name || '';
+    const eventName    = f.expand?.tournament?.event_name || '';
+    const label        = [eventName, tournamentName].filter(Boolean).join(' · ') || tournamentName;
+    const when         = f.scheduled_start_time
+    ? new Date(f.scheduled_start_time).toLocaleString(undefined, {
+      weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit',
+    })
+    : '';
+
+    return `<div class="upcoming-game-card">
+    ${label ? `<div class="upcoming-game-meta">${escHtml(label)}</div>` : ''}
+    <div class="upcoming-game-teams">
+    <span>${escHtml(home)}</span>
+    <span class="upcoming-game-vs">vs</span>
+    <span>${escHtml(away)}</span>
+    </div>
+    ${when ? `<div class="upcoming-game-time">${escHtml(when)}</div>` : ''}
+    </div>`;
   },
 
   // Real match data only — the most recently updated fixture that's either

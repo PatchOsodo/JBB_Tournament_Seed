@@ -354,6 +354,58 @@ input, button, select, textarea {
 .champion-card .champion-team  { font-size: 14px; font-weight: 600; color: var(--text-primary); }
 .champion-card .champion-meta  { font-size: 11px; color: var(--text-tertiary); margin-top: 2px; }
 
+/* ── Upcoming games — homepage teaser, real scheduled fixtures only ─────── */
+.upcoming-games-heading {
+  font-size     : 15px;
+  font-weight   : 700;
+  color         : var(--text-primary);
+  margin-bottom : 10px;
+}
+.upcoming-games-grid {
+  display               : grid;
+  grid-template-columns : repeat(auto-fit, minmax(220px, 1fr));
+  gap                    : 10px;
+  margin-bottom          : 1.5rem;
+}
+.upcoming-game-card {
+  background    : var(--bg-primary);
+  border        : 0.5px solid var(--border-light);
+  border-radius : var(--radius-lg);
+  padding       : 12px 14px;
+}
+.upcoming-game-meta {
+  font-size     : 11px;
+  color         : var(--text-tertiary);
+  margin-bottom : 6px;
+}
+.upcoming-game-teams {
+  display         : flex;
+  align-items     : center;
+  justify-content : space-between;
+  font-size       : 13px;
+  font-weight     : 600;
+  color           : var(--text-primary);
+  gap             : 6px;
+}
+.upcoming-game-teams span:first-child,
+.upcoming-game-teams span:last-child {
+  overflow      : hidden;
+  text-overflow : ellipsis;
+  white-space   : nowrap;
+}
+.upcoming-game-vs {
+  font-size   : 10px;
+  color       : var(--text-tertiary);
+  font-weight : 400;
+  flex-shrink : 0;
+}
+.upcoming-game-time {
+  font-size   : 11px;
+  color       : var(--accent);
+  margin-top  : 6px;
+  font-weight : 600;
+}
+
 /* ── Scroll fade-in-up ────────────────────────────────────────────────── */
 .hero-fade-in {
   opacity   : 0;
