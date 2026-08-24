@@ -15,13 +15,14 @@ const Courts = {
   currentTournamentId: null,
 
   async init() {
-    if (!Auth.isAdmin()) {
-      document.getElementById('not-admin-notice').style.display = '';
-      Logger.info('Courts.init blocked — not an admin');
-      return;
-    }
-    Courts._renderAuthBar();
-    document.getElementById('courts-page-body').style.display = '';
+      await Shell.injectNav();
+      Shell.renderAuthBar(pb);
+      if (!Auth.isAdmin()) {
+        document.getElementById('not-admin-notice').style.display = '';
+        Logger.info('Courts.init blocked — not an admin');
+        return;
+      }
+      document.getElementById('courts-page-body').style.display = '';
 
     try {
       Courts.tournaments = await pb.collection('tournaments').getFullList({

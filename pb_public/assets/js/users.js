@@ -19,8 +19,6 @@ const Users = {
       return;
     }
 
-    Users._renderAuthBar();
-
     try {
       Users.allTournaments = await pb.collection('tournaments').getFullList({
         sort : '-created',

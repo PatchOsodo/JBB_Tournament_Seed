@@ -86,25 +86,6 @@ const CONFIG = {
 
 const pb = new PocketBase(CONFIG.API_BASE_URL);
 
-function _bracketRenderAuthBar() {
-  const ctrl = document.getElementById('auth-controls');
-  const navUsers = document.getElementById('nav-users');
-  const user = pb.authStore.isValid ? pb.authStore.model : null;
-  const isAdmin = user?.role === 'super_admin' || user?.role === 'tournament_admin';
-
-  if (navUsers) navUsers.style.display = isAdmin ? '' : 'none';
-  const navCourts = document.getElementById('nav-courts');
-  if (navCourts) navCourts.style.display = isAdmin ? '' : 'none';
-  if (!ctrl) return;
-
-  if (user) {
-    ctrl.innerHTML = `<button class="btn sm ghost" onclick="pb.authStore.clear(); window.location.href='login.html';">Sign out</button>`;
-  } else {
-    ctrl.innerHTML = `<a href="login.html" class="btn sm primary">Sign in</a>`;
-  }
-}
-document.addEventListener('DOMContentLoaded', _bracketRenderAuthBar);
-
 window.BracketTabs = {
         show(name, btn) {
           document.querySelectorAll('.bc-tab-panel').forEach(p => p.classList.remove('active'));
@@ -170,6 +151,8 @@ const BracketPage = {
   fixtures   : [],
 
   async init() {
+    await Shell.injectNav();
+    Shell.renderAuthBar(pb);
     const box = document.getElementById('champion-box');
     if (box) { box.style.display = 'none'; box.style.animation = 'none'; box.classList.remove('is-visible'); }
     Logger.info('BracketPage.init', { version: CONFIG.VERSION });

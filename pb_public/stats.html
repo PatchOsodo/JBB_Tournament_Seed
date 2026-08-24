@@ -30,33 +30,6 @@ if ('serviceWorker' in navigator) {
         document.body.insertBefore(div.firstChild, document.body.firstChild);
       });
   </script>
- <nav class="app-nav" id="app-nav">
-    <a href="index.html" class="nav-brand"><img src="assets/img/logo.png" alt="Junior Ballers 254" class="nav-logo"> JB254</a>
-    <div class="app-nav-links">
-      <a href="index.html" class="nav-link" id="nav-home">🏠 Home</a>
-      <a href="stats.html" class="nav-link" id="nav-stats">📊 Stats</a>
-      <a href="teams.html" class="nav-link" id="nav-teams">🏀 Teams</a>
-      <a href="users.html" class="nav-link" id="nav-users" style="display:none;">👥 Users</a>
-      <a href="courts.html" class="nav-link" id="nav-courts" style="display:none;">🏟️ Courts</a>
-    </div>
-    <div id="auth-controls"></div>
-  </nav>
-
-  <!-- Bottom nav bar (mobile only) -->
-  <nav class="bottom-nav">
-    <a href="index.html" class="bottom-nav-item active">
-      <span class="nav-icon">🏠</span>Home
-    </a>
-    <a href="stats.html" class="bottom-nav-item">
-      <span class="nav-icon">📊</span>Stats
-    </a>
-    <a href="teams.html" class="bottom-nav-item">
-      <span class="nav-icon">🏀</span> Teams
-    </a>
-    <a href="login.html" class="bottom-nav-item" id="bottom-nav-auth">
-      <span class="nav-icon">👤</span>Account
-    </a>
-  </nav>
 
 <div class="page-wrapper">
 <div class="app">
@@ -207,6 +180,7 @@ if ('serviceWorker' in navigator) {
 </div>
 
 <script src="assets/js/pocketbase.umd.js"></script>
+<script src="assets/js/shell.js"></script>
 <script src="assets/js/config.js"></script>
 <script>
 /* =============================================================================
@@ -225,7 +199,8 @@ let aggregated  = {};   // { masterId → agg object }
 // ── Boot ──────────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
   setConnStatus(await checkHealth());
-  renderAuthBar();
+  await Shell.injectNav();
+  Shell.renderAuthBar(pb);
   await loadData();
 });
 
@@ -237,22 +212,6 @@ function setConnStatus(online) {
   const dot = document.getElementById('conn-dot'), label = document.getElementById('conn-label');
   if (dot)   dot.className     = 'conn-dot ' + (online ? 'online' : 'offline');
   if (label) label.textContent = online ? 'Connected' : 'Offline';
-}
-
-function renderAuthBar() {
-  const ctrl = document.getElementById('auth-controls');
-  if (!ctrl) return;
-  const user = pb.authStore.isValid ? pb.authStore.model : null;
-  if (user) {
-    const roleLabel = { super_admin:'⚡ Super Admin', tournament_admin:'✏️ Tournament Admin', score_inputter:'🖊️ Score Inputter', fan:'⭐ Fan' }[user.role] || user.role;
-    ctrl.innerHTML = `
-      <span style="font-size:12px;color:var(--text-secondary);">${esc(user.name||user.email)}
-        <span style="margin-left:6px;font-size:10px;padding:2px 6px;border-radius:4px;background:var(--bg-secondary);color:var(--text-tertiary);border:0.5px solid var(--border-light);">${roleLabel}</span>
-      </span>
-      <button class="btn sm ghost" onclick="pb.authStore.clear();window.location.href='login.html'">Sign out</button>`;
-  } else {
-    ctrl.innerHTML = `<a href="login.html" class="btn sm primary">Sign in</a>`;
-  }
 }
 
 // ── Data loading ──────────────────────────────────────────────────────────────

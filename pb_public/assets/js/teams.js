@@ -40,9 +40,16 @@ let _profileTeamId = null; // ID of team currently shown in profile modal
    ============================================================================= */
 document.addEventListener('DOMContentLoaded', async () => {
   _setConnStatus(await _checkHealth());
-  _renderAuthBar();
+  await Shell.injectNav();
+  Shell.renderAuthBar(pb);
+  _syncAdminAddButton();
   await Teams.load();
 });
+
+function _syncAdminAddButton() {
+  const addBtn = document.getElementById('admin-add-btn');
+  if (addBtn) addBtn.style.display = _Auth.isAdmin() ? '' : 'none';
+}
 
 async function _checkHealth() {
   try { await pb.health.check(); return true; } catch (e) { return false; }

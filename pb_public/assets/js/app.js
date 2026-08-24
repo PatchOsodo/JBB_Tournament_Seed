@@ -20,7 +20,8 @@ const App = {
                 email   : user?.email ?? '(guest)',
     });
 
-    App._renderAuthBar();
+    await Shell.injectNav();
+    Shell.renderAuthBar(pb);
 
     const online = await DB.healthCheck();
     UI.setConnectionStatus(online);
@@ -428,62 +429,6 @@ const App = {
     return isLocked
     ? `<div style="font-size:11px;color:var(--text-warning);margin-top:2px;">🔒 Locked since ${dateStr}</div>`
     : `<div style="font-size:11px;color:var(--text-tertiary);margin-top:2px;">Registration closes ${dateStr}</div>`;
-  },
-
-  _renderAuthBar() {
-    const ctrl = document.getElementById('auth-controls');
-    const navUsers = document.getElementById('nav-users');
-    if (navUsers) navUsers.style.display = Auth.isAdmin() ? '' : 'none';
-    const navCourts = document.getElementById('nav-courts');
-    if (navCourts) navCourts.style.display = Auth.isAdmin() ? '' : 'none';
-
-    const heroCta = document.getElementById('hero-cta-secondary');
-    if (heroCta) heroCta.style.display = Auth.user() ? 'none' : '';
-
-    if (!ctrl) return;
-    const user = Auth.user();
-
-    if (user) {
-      const roleLabel = {
-        super_admin      : '⚡ Super Admin',
-        tournament_admin : '✏️ Tournament Admin',
-        score_inputter   : '🖊️ Score Inputter',
-        fan              : '⭐ Fan',
-      }[user.role] || user.role;
-
-      const displayName = escHtml(user.name || user.email);
-
-      ctrl.innerHTML = `
-      <span style="font-size:12px;color:var(--text-secondary);">
-      ${displayName}
-      <span style="margin-left:6px;font-size:10px;padding:2px 6px;
-      border-radius:4px;background:var(--bg-secondary);
-      color:var(--text-tertiary);border:0.5px solid var(--border-light);">
-      ${roleLabel}
-      </span>
-      </span>
-      <button class="btn sm ghost" onclick="Auth.logout()">Sign out</button>`;
-    } else {
-      ctrl.innerHTML = `
-      <span style="font-size:12px;color:var(--text-tertiary);">Browsing as guest</span>
-      <a href="login.html" class="btn sm primary">Sign in / Register</a>`;
-    }
-
-    const bottomAuthItem = document.getElementById('bottom-nav-auth');
-    if (bottomAuthItem) {
-      if (user) {
-        bottomAuthItem.innerHTML = `<span class="nav-icon">👤</span>${escHtml(user.name?.split(' ')[0] || 'Account')}`;
-        bottomAuthItem.href      = '#';
-        bottomAuthItem.onclick   = (e) => {
-          e.preventDefault();
-          App._showAccountSheet();
-        };
-      } else {
-        bottomAuthItem.innerHTML = `<span class="nav-icon">👤</span>Sign in`;
-        bottomAuthItem.href      = 'login.html';
-        bottomAuthItem.onclick   = null;
-      }
-    }
   },
 
   // ── Roster/format grid — SINGLE definition. A duplicate of this method
