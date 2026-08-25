@@ -1183,6 +1183,64 @@ select.tournament-name-input {
   text-align: right;
 }
 
+/* ── Results page — scoreboard-style cards, distinct from the compact
+ *  .match-card schedule rows used on fixtures.html ──────────────────────── */
+.result-card {
+  background    : var(--bg-primary);
+  border        : 0.5px solid var(--border-light);
+  border-radius : var(--radius-lg);
+  padding       : 16px 18px;
+  margin-bottom : 12px;
+}
+.result-teams {
+  display        : flex;
+  flex-direction : column;
+  gap            : 6px;
+  margin-bottom  : 10px;
+}
+.result-team {
+  display         : flex;
+  align-items     : center;
+  justify-content : space-between;
+  gap             : 10px;
+}
+.result-team-name {
+  font-size   : 15px;
+  font-weight : 600;
+  color       : var(--text-secondary);
+  overflow      : hidden;
+  text-overflow : ellipsis;
+  white-space   : nowrap;
+}
+.result-team-score {
+  font-size   : 20px;
+  font-weight : 800;
+  color       : var(--text-tertiary);
+  flex-shrink : 0;
+}
+.result-team.winner .result-team-name  { color: var(--text-primary); }
+.result-team.winner .result-team-score { color: var(--accent); }
+.result-meta {
+  display        : flex;
+  gap            : 8px;
+  flex-wrap      : wrap;
+  align-items    : center;
+  font-size      : 11px;
+  color          : var(--text-tertiary);
+  padding-top    : 8px;
+  border-top     : 0.5px solid var(--border-light);
+}
+.result-round-badge {
+  font-size      : 10px;
+  font-weight    : 700;
+  letter-spacing : 0.06em;
+  text-transform : uppercase;
+  color          : var(--accent);
+  background     : var(--bg-success);
+  padding        : 2px 8px;
+  border-radius  : 20px;
+}
+
 .tbd         { color: var(--text-tertiary) !important; font-style: italic; }
 .winner-bold { font-weight: 700; color: var(--accent) !important; }
 

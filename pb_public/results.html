@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Results — Junior Ballers 254</title>
+<link rel="icon" type="image/x-icon" href="assets/img/favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/img/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/img/favicon-192.png">
+<link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/styles.css">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1a5c28">
+</head>
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('assets/js/sw.js').catch(console.warn);
+}
+</script>
+<body>
+
+<!-- Nav is injected by Shell.injectNav() at boot — see assets/partials/nav.html -->
+
+<div class="page-wrapper">
+<div class="app">
+
+  <!-- APP HEADER -->
+  <div class="app-header">
+    <div>
+      <div class="schedule-title" id="res-title">Loading…</div>
+      <div class="schedule-meta" id="res-meta"></div>
+    </div>
+  </div>
+
+  <!-- Nav strip — same pattern as tournament.html's -->
+  <div class="btn-row" id="res-nav" style="margin-bottom:1.25rem;"></div>
+
+  <div class="error-banner" id="res-error">
+    <span class="banner-icon">!</span>
+    <span id="res-error-msg"></span>
+  </div>
+
+  <div id="res-body">
+    <div style="margin-bottom:1rem;max-width:280px;">
+      <select id="res-filter" class="tournament-name-input" style="margin-bottom:0;display:none;">
+        <option value="all">All rounds</option>
+      </select>
+    </div>
+    <div id="res-list">
+      <div class="empty-state" style="padding:1.5rem 0;">
+        <span class="empty-icon">⏳</span>Loading…
+      </div>
+    </div>
+  </div>
+
+</div><!-- /.app -->
+</div><!-- /.page-wrapper -->
+
+<script src="assets/js/pocketbase.umd.js"></script>
+<script src="assets/js/shell.js"></script>
+<script src="assets/js/config.js"></script>
+<script src="assets/js/results.js"></script>
+</body>
+</html>

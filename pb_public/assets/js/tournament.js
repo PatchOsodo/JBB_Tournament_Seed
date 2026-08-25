@@ -82,6 +82,8 @@ const TournamentPage = {
         document.getElementById('tourn-nav').innerHTML = `
         <span class="btn sm primary" style="pointer-events:none;">Overview</span>
         <a class="btn sm ghost" href="fixtures.html?id=${id}">Fixtures</a>
+        <a class="btn sm ghost" href="results.html?id=${id}">Results</a>
+        <a class="btn sm ghost" href="standings.html?id=${id}">Standings</a>
         <a class="btn sm ghost" href="bracket.html?id=${id}">Bracket</a>
         <a class="btn sm ghost" href="teams.html">Teams registry</a>
         `;
