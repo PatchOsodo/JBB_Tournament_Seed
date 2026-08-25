@@ -201,6 +201,24 @@ const BracketPage = {
     if (metaEl)  metaEl.textContent  =
       `${BracketPage.teams.length} teams · ${t.format.replace(/_/g,' ')} · ${done}/${fx.length} matches played`;
     if (badgeEl) { badgeEl.textContent = t.status; badgeEl.className = `status-badge badge-${t.status}`; }
+    BracketPage._renderNav(t.id);
+  },
+
+  // Same nav strip as tournament.html/fixtures.html/results.html/
+  // standings.html — closes the loop so every tournament detail page links
+  // to every other one consistently. Bracket rendering itself (below) is
+  // completely untouched.
+  _renderNav(id) {
+    const el = document.getElementById('bracket-nav');
+    if (!el) return;
+    el.innerHTML = `
+    <a class="btn sm ghost" href="tournament.html?id=${id}">Overview</a>
+    <a class="btn sm ghost" href="fixtures.html?id=${id}">Fixtures</a>
+    <a class="btn sm ghost" href="results.html?id=${id}">Results</a>
+    <a class="btn sm ghost" href="standings.html?id=${id}">Standings</a>
+    <span class="btn sm primary" style="pointer-events:none;">Bracket</span>
+    <a class="btn sm ghost" href="teams.html">Teams registry</a>
+    `;
   },
 
   _renderBracket() {

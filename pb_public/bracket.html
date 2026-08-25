@@ -13,7 +13,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#1a5c28">
-<link rel="stylesheet" href="assets/css/styles.css?v=3.0.4">
+<link rel="stylesheet" href="assets/css/styles.css?v=3.0.1">
 <style>
 
   /* ============================================================
@@ -126,6 +126,9 @@ if ('serviceWorker' in navigator) {
     })
     .catch(() => {}); // non-fatal — trophy falls back gracefully if icons.svg missing
 </script>
+
+<!-- Nav is injected by Shell.injectNav() at boot — see assets/partials/nav.html -->
+
 <!-- =========================================================================
      PAGE CONTENT
      ========================================================================= -->
@@ -177,6 +180,11 @@ if ('serviceWorker' in navigator) {
     </div>
   </div>
 
+  <!-- Nav strip — Overview/Fixtures/Results/Standings/Bracket/Teams, same
+       pattern as tournament.html/fixtures.html/results.html/standings.html.
+       Populated by BracketPage._renderNav() once the tournament ID is known. -->
+  <div class="btn-row" id="bracket-nav" style="margin-bottom:1.25rem;"></div>
+
   <!-- CHAMPION BOX — shown only when tournament is completed --------------- -->
   <div class="champion-box" id="champion-box" style="display:none;animation:none;"></div>
 
@@ -203,6 +211,6 @@ if ('serviceWorker' in navigator) {
      ========================================================================= -->
 <script src="assets/js/pocketbase.umd.js"></script>
 <script src="assets/js/shell.js"></script>
-<script src="assets/js/bracket.js?v=6.0.1>"></script>
+<script src="assets/js/bracket.js?v=6.0.1"></script>
 </body>
 </html>
