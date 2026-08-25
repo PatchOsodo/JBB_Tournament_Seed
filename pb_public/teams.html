@@ -11,7 +11,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/css/styles.css?v=3.0.4">
+<link rel="stylesheet" href="assets/css/styles.css">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#1a5c28">
 </head>
@@ -21,6 +21,8 @@ if ('serviceWorker' in navigator) {
 }
 </script>
 <body>
+
+<!-- Nav is injected by Shell.injectNav() at boot — see assets/partials/nav.html -->
 
 <div class="page-wrapper">
 <div class="app">
@@ -39,6 +41,10 @@ if ('serviceWorker' in navigator) {
 
   <!-- MAIN CONTENT -->
   <div style="max-width:700px;margin:0 auto;padding:0 1rem 3rem;">
+
+    <!-- Roster-scope banner — shown only when ?tournament=<id> is present,
+         populated by Teams._renderScopeBanner() in teams.js -->
+    <div id="roster-scope-banner" style="display:none;"></div>
 
     <!-- Page heading + add button -->
     <div style="display:flex;align-items:center;justify-content:space-between;
