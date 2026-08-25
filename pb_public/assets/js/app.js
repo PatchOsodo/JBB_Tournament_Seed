@@ -227,7 +227,15 @@ const App = {
 
       State.favourites  = favourites;
       State.teamCounts  = teamCounts;
-      Logger.info('Tournaments loaded', { count: tournaments.length });
+
+      const filterStatus = App._homeStatusFilter;
+      const filteredTournaments = filterStatus === 'all'
+      ? tournaments
+      : tournaments.filter(t => t.status === filterStatus);
+
+      Logger.info('Tournaments loaded', {
+        count: tournaments.length, shown: filteredTournaments.length, filter: filterStatus,
+      });
 
       if (!tournaments.length) {
         list.innerHTML = `<div class="empty-state">
@@ -237,10 +245,22 @@ const App = {
         return;
       }
 
+      if (!filteredTournaments.length) {
+        const emptyMsg = {
+          active   : 'No tournaments are currently active.',
+          pending  : 'No upcoming tournaments right now.',
+          completed: 'No completed tournaments yet.',
+        }[filterStatus] || 'Nothing to show.';
+        list.innerHTML = `<div class="empty-state">
+        <span class="empty-icon">🏆</span>${emptyMsg}
+        </div>`;
+        return;
+      }
+
       const events     = {};
       const standalone = [];
 
-      tournaments.forEach(t => {
+      filteredTournaments.forEach(t => {
         const ev = (t.event_name || '').trim();
         if (ev) {
           if (!events[ev]) events[ev] = [];
@@ -259,7 +279,7 @@ const App = {
           typeof f.tournament === 'object' ? f.tournament.id : f.tournament
           )
         );
-        const favTournaments = tournaments.filter(t => favIds.has(t.id));
+        const favTournaments = filteredTournaments.filter(t => favIds.has(t.id));
         if (favTournaments.length) {
           html += `
           <div style="margin-bottom:10px;">
@@ -391,7 +411,7 @@ const App = {
     ${bannerHtml}
     <div class="tournament-card-body">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
-    <div style="font-size:14px;font-weight:600;color:var(--text-primary);">${escHtml(t.name)}</div>
+    <a href="tournament.html?id=${t.id}" style="font-size:14px;font-weight:600;color:var(--text-primary);text-decoration:none;">${escHtml(t.name)}</a>
     <span class="status-badge badge-${t.status}">${App._statusLabel(t.status)}</span>
     </div>
     ${catLabel ? `<div class="tournament-card-badges">
@@ -452,7 +472,7 @@ const App = {
     <div style="font-size:${isCategory ? '13px' : '14px'};font-weight:500;
     color:var(--text-primary);display:flex;align-items:center;gap:6px;">
     ${isCategory ? '<span style="font-size:11px;color:var(--text-tertiary)">↳</span>' : ''}
-    ${escHtml(t.name)}
+    <a href="tournament.html?id=${t.id}" style="color:inherit;text-decoration:none;">${escHtml(t.name)}</a>
     </div>
     <div style="font-size:11px;color:var(--text-tertiary);margin-top:2px;">
     ${formatText} · ${dateText}
@@ -768,6 +788,16 @@ const App = {
     } catch (e) {
       Logger.warn('_populateEventSuggestions failed', { error: e.message });
     }
+  },
+
+  // Public tournament-directory status filter — 'all' | 'active' | 'pending' | 'completed'
+  _homeStatusFilter: 'all',
+
+  setHomeStatusFilter(status, btnEl) {
+    App._homeStatusFilter = status;
+    document.querySelectorAll('#tournament-status-filter .tab').forEach(b => b.classList.remove('active'));
+    if (btnEl) btnEl.classList.add('active');
+    App.loadTournaments();
   },
 
   /* ── 11c.1 MULTI-CATEGORY BUILDER ON SETUP SCREEN ────────────────────── */

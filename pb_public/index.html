@@ -91,6 +91,15 @@ if ('serviceWorker' in navigator) {
       </div>
     </div>
 
+    <!-- Status filter — Active / Upcoming / Completed, reuses the same
+         .tab-row/.tab styling already used on the fixtures screen -->
+    <div class="tab-row" id="tournament-status-filter" style="margin-bottom:0.75rem;">
+      <button class="tab active" onclick="App.setHomeStatusFilter('all', this)">All</button>
+      <button class="tab" onclick="App.setHomeStatusFilter('active', this)">Active</button>
+      <button class="tab" onclick="App.setHomeStatusFilter('pending', this)">Upcoming</button>
+      <button class="tab" onclick="App.setHomeStatusFilter('completed', this)">Completed</button>
+    </div>
+
     <div class="success-banner" id="home-success">
       <span class="banner-icon">✓</span>
       <span id="home-success-msg"></span>
