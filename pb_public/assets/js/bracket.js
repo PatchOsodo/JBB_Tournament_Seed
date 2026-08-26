@@ -197,7 +197,7 @@ const BracketPage = {
     const titleEl = document.getElementById('bracket-title');
     const metaEl  = document.getElementById('bracket-meta');
     const badgeEl = document.getElementById('bracket-status');
-    if (titleEl) titleEl.textContent = t.name;
+    document.title = `Bracket — ${t.event_name || t.name} | Junior Ballers 254`;
     if (metaEl)  metaEl.textContent  =
       `${BracketPage.teams.length} teams · ${t.format.replace(/_/g,' ')} · ${done}/${fx.length} matches played`;
     if (badgeEl) { badgeEl.textContent = t.status; badgeEl.className = `status-badge badge-${t.status}`; }
@@ -217,7 +217,7 @@ const BracketPage = {
     <a class="btn sm ghost" href="results.html?id=${id}">Results</a>
     <a class="btn sm ghost" href="standings.html?id=${id}">Standings</a>
     <span class="btn sm primary" style="pointer-events:none;">Bracket</span>
-    <a class="btn sm ghost" href="teams.html">Teams registry</a>
+    <a class="btn sm ghost" href="teams.html?tournament=${id}">Teams registry</a>
     `;
   },
 

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tournament — Junior Ballers 254</title>
+<title>Admin Dashboard — Junior Ballers 254</title>
 <link rel="icon" type="image/x-icon" href="assets/img/favicon.ico">
 <link rel="icon" type="image/png" sizes="32x32" href="assets/img/favicon-32.png">
 <link rel="icon" type="image/png" sizes="192x192" href="assets/img/favicon-192.png">
@@ -14,12 +14,7 @@
 <link rel="stylesheet" href="assets/css/styles.css">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#1a5c28">
-<meta name="description" content="{{DESCRIPTION}}">
-<meta property="og:type" content="website">
-<meta property="og:site_name" content="Junior Ballers 254">
-<meta property="og:title" content="{{TITLE}}">
-<meta property="og:description" content="{{DESCRIPTION}}">
-<meta name="twitter:card" content="summary">
+<meta name="robots" content="noindex, nofollow">
 </head>
 <script>
 if ('serviceWorker' in navigator) {
@@ -36,32 +31,27 @@ if ('serviceWorker' in navigator) {
   <!-- APP HEADER -->
   <div class="app-header">
     <div>
-      <div class="schedule-title" id="tourn-title">Loading…</div>
-      <div class="schedule-meta" id="tourn-meta"></div>
+      <h1>JB254 Admin</h1>
+      <p>Operational snapshot across every tournament</p>
     </div>
-    <div class="app-header-right">
-      <span class="status-badge badge-pending" id="tourn-status">—</span>
-    </div>
+    <a href="index.html" class="btn sm ghost">Full tournament list →</a>
   </div>
 
-  <!-- Nav strip — Overview is this page; Bracket/Teams link to existing
-       public pages. Fixtures/Results/Standings as standalone public pages
-       are a later phase, so they're deliberately not linked here yet. -->
-  <div class="btn-row" id="tourn-nav" style="margin-bottom:1.25rem;"></div>
-
-  <div class="error-banner" id="tourn-error">
-    <span class="banner-icon">!</span>
-    <span id="tourn-error-msg"></span>
+  <!-- Not-an-admin notice — same gating pattern as courts.html/users.html -->
+  <div class="empty-state" id="not-admin-notice" style="display:none;">
+    <span class="empty-icon">🔒</span>
+    This page is only available to tournament admins.
   </div>
 
-  <div id="tourn-body">
-    <div class="stats-row" id="tourn-stats-row"></div>
+  <div id="admin-body" style="display:none;">
 
-    <div style="display:grid;grid-template-columns:1fr;gap:1.5rem;margin-top:0.5rem;">
+    <div class="stats-row" id="admin-stats-row" style="margin-bottom:1.5rem;"></div>
+
+    <div style="display:grid;grid-template-columns:1fr;gap:1.5rem;">
 
       <div>
-        <div class="round-label" style="margin-bottom:8px;">Recent results</div>
-        <div id="tourn-recent-results">
+        <div class="round-label" style="margin-bottom:8px;">⚠️ Needs attention</div>
+        <div id="admin-pending-list">
           <div class="empty-state" style="padding:1.5rem 0;">
             <span class="empty-icon">⏳</span>Loading…
           </div>
@@ -69,8 +59,17 @@ if ('serviceWorker' in navigator) {
       </div>
 
       <div>
-        <div class="round-label" style="margin-bottom:8px;">Next up</div>
-        <div id="tourn-next-up">
+        <div class="round-label" style="margin-bottom:8px;">📅 Today's games</div>
+        <div id="admin-today-list">
+          <div class="empty-state" style="padding:1.5rem 0;">
+            <span class="empty-icon">⏳</span>Loading…
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="round-label" style="margin-bottom:8px;">🏀 Recent results</div>
+        <div id="admin-recent-list">
           <div class="empty-state" style="padding:1.5rem 0;">
             <span class="empty-icon">⏳</span>Loading…
           </div>
@@ -86,6 +85,8 @@ if ('serviceWorker' in navigator) {
 <script src="assets/js/pocketbase.umd.js"></script>
 <script src="assets/js/shell.js"></script>
 <script src="assets/js/config.js"></script>
-<script src="assets/js/tournament.js"></script>
+<script src="assets/js/logger.js"></script>
+<script src="assets/js/auth.js"></script>
+<script src="assets/js/admin.js"></script>
 </body>
 </html>

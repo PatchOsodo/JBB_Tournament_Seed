@@ -12,6 +12,13 @@
  * (falls back to its own if config.js hasn't loaded yet — e.g. bracket.html
  * previously didn't load config.js at all).
  *
+ * CHANGES
+ * -------
+ * - Phase 12: the mobile Account sheet now includes quick links to
+ *   Admin/Users/Courts for admins — the top nav where those links normally
+ *   live is hidden below 600px in favor of the bottom-nav bar, which
+ *   otherwise gave admins no way to reach those pages on a phone at all.
+ *
  * Usage on every page, after the pb client exists:
  *   await Shell.injectNav();
  *   Shell.renderAuthBar(pb);
@@ -21,8 +28,8 @@
 if (typeof escHtml === 'undefined') {
   window.escHtml = function escHtml(str) {
     return String(str ?? '')
-      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   };
 }
 
@@ -35,7 +42,11 @@ const Shell = {
   // blocks so nothing renders twice.
   async injectNav() {
     try {
-      const res  = await fetch('assets/partials/nav.html');
+      const res = await fetch('assets/partials/nav.html');
+      if (!res.ok) {
+        console.warn(`Shell.injectNav: nav.html returned ${res.status} — confirm it's deployed at pb_public/assets/partials/nav.html`);
+        return;
+      }
       const html = await res.text();
       const wrap = document.createElement('div');
       wrap.innerHTML = html;
@@ -49,9 +60,9 @@ const Shell = {
 
   // One implementation of the auth bar, used by every page. Behavior is
   // identical to what each page did separately before Phase 1: show/hide
-  // the Users/Courts nav links for admins, render sign-in/sign-out state,
-  // sync the bottom-nav Account tab (with the inline sheet for signed-in
-  // users), and highlight the active nav link.
+  // the Users/Courts/Admin nav links for admins, render sign-in/sign-out
+  // state, sync the bottom-nav Account tab (with the inline sheet for
+  // signed-in users), and highlight the active nav link.
   renderAuthBar(pb) {
     const user    = pb.authStore.isValid ? pb.authStore.model : null;
     const isAdmin = user?.role === 'super_admin' || user?.role === 'tournament_admin';
@@ -60,6 +71,8 @@ const Shell = {
     if (navUsers) navUsers.style.display = isAdmin ? '' : 'none';
     const navCourts = document.getElementById('nav-courts');
     if (navCourts) navCourts.style.display = isAdmin ? '' : 'none';
+    const navAdmin = document.getElementById('nav-admin');
+    if (navAdmin) navAdmin.style.display = isAdmin ? '' : 'none';
 
     const ctrl = document.getElementById('auth-controls');
     if (ctrl) {
@@ -72,19 +85,19 @@ const Shell = {
         }[user.role] || user.role;
 
         ctrl.innerHTML = `
-          <span style="font-size:12px;color:var(--text-secondary);">
-            ${escHtml(user.name || user.email)}
-            <span style="margin-left:6px;font-size:10px;padding:2px 6px;
-                         border-radius:4px;background:var(--bg-secondary);
-                         color:var(--text-tertiary);border:0.5px solid var(--border-light);">
-              ${roleLabel}
-            </span>
-          </span>
-          <button class="btn sm ghost" onclick="pb.authStore.clear();window.location.href='login.html';">Sign out</button>`;
+        <span style="font-size:12px;color:var(--text-secondary);">
+        ${escHtml(user.name || user.email)}
+        <span style="margin-left:6px;font-size:10px;padding:2px 6px;
+        border-radius:4px;background:var(--bg-secondary);
+        color:var(--text-tertiary);border:0.5px solid var(--border-light);">
+        ${roleLabel}
+        </span>
+        </span>
+        <button class="btn sm ghost" onclick="pb.authStore.clear();window.location.href='login.html';">Sign out</button>`;
       } else {
         ctrl.innerHTML = `
-          <span style="font-size:12px;color:var(--text-tertiary);">Browsing as guest</span>
-          <a href="login.html" class="btn sm primary">Sign in / Register</a>`;
+        <span style="font-size:12px;color:var(--text-tertiary);">Browsing as guest</span>
+        <a href="login.html" class="btn sm primary">Sign in / Register</a>`;
       }
     }
 
@@ -93,7 +106,7 @@ const Shell = {
       if (user) {
         bottomAuthItem.innerHTML = `<span class="nav-icon">👤</span>${escHtml(user.name?.split(' ')[0] || 'Account')}`;
         bottomAuthItem.href      = '#';
-        bottomAuthItem.onclick   = (e) => { e.preventDefault(); Shell._showAccountSheet(user); };
+        bottomAuthItem.onclick   = (e) => { e.preventDefault(); Shell._showAccountSheet(user, isAdmin); };
       } else {
         bottomAuthItem.innerHTML = `<span class="nav-icon">👤</span>Sign in`;
         bottomAuthItem.href      = 'login.html';
@@ -117,36 +130,48 @@ const Shell = {
     });
   },
 
-  _showAccountSheet(user) {
+  _showAccountSheet(user, isAdmin) {
     document.getElementById('_acct-sheet')?.remove();
     const roleLabel = {
       super_admin: '⚡ Super Admin', tournament_admin: '✏️ Admin',
       score_inputter: '🖊️ Score Inputter', fan: '⭐ Fan',
     }[user?.role] || '';
 
+    // Admin quick-links — the top nav where these normally live is hidden
+    // below 600px in favor of this bottom sheet, so without this an admin
+    // on a phone has no way to reach Admin/Users/Courts at all.
+    const adminLinksHtml = isAdmin ? `
+    <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:1rem;">
+    <a href="admin.html" class="btn sm ghost" style="width:100%;justify-content:flex-start;">📋 Admin dashboard</a>
+    <a href="users.html" class="btn sm ghost" style="width:100%;justify-content:flex-start;">👥 Users</a>
+    <a href="courts.html" class="btn sm ghost" style="width:100%;justify-content:flex-start;">🏟️ Courts</a>
+    </div>` : '';
+
     const sheet = document.createElement('div');
     sheet.id = '_acct-sheet';
     sheet.innerHTML = `
-      <div style="position:fixed;inset:0;z-index:299;background:rgba(0,0,0,0.4);"
-           onclick="document.getElementById('_acct-sheet').remove()"></div>
-      <div style="position:fixed;bottom:60px;left:0;right:0;z-index:300;
-                  background:var(--bg-primary);border-top:0.5px solid var(--border-light);
-                  border-radius:var(--radius-lg) var(--radius-lg) 0 0;
-                  padding:1.25rem 1.5rem 1.5rem;max-width:480px;margin:0 auto;">
-        <div style="font-size:14px;font-weight:600;color:var(--text-primary);margin-bottom:4px;">
-          ${escHtml(user?.name || user?.email || '')}
-        </div>
-        <div style="font-size:11px;color:var(--text-tertiary);margin-bottom:1.25rem;">
-          ${escHtml(user?.email || '')}
-          ${roleLabel ? `<span style="margin-left:8px;padding:2px 6px;border-radius:4px;
-            background:var(--bg-secondary);border:0.5px solid var(--border-light);">
-            ${roleLabel}</span>` : ''}
-        </div>
-        <button onclick="pb.authStore.clear();window.location.href='login.html';" class="btn sm ghost"
-                style="width:100%;justify-content:center;color:var(--danger);border-color:var(--danger);">
-          Sign out
-        </button>
+    <div style="position:fixed;inset:0;z-index:299;background:rgba(0,0,0,0.4);"
+    onclick="document.getElementById('_acct-sheet').remove()"></div>
+    <div style="position:fixed;bottom:60px;left:0;right:0;z-index:300;
+    background:var(--bg-primary);border-top:0.5px solid var(--border-light);
+    border-radius:var(--radius-lg) var(--radius-lg) 0 0;
+    padding:1.25rem 1.5rem 1.5rem;max-width:480px;margin:0 auto;
+    max-height:70vh;overflow-y:auto;">
+    <div style="font-size:14px;font-weight:600;color:var(--text-primary);margin-bottom:4px;">
+    ${escHtml(user?.name || user?.email || '')}
+    </div>
+    <div style="font-size:11px;color:var(--text-tertiary);margin-bottom:1.25rem;">
+    ${escHtml(user?.email || '')}
+    ${roleLabel ? `<span style="margin-left:8px;padding:2px 6px;border-radius:4px;
+      background:var(--bg-secondary);border:0.5px solid var(--border-light);">
+      ${roleLabel}</span>` : ''}
+      </div>
+      ${adminLinksHtml}
+      <button onclick="pb.authStore.clear();window.location.href='login.html';" class="btn sm ghost"
+      style="width:100%;justify-content:center;color:var(--danger);border-color:var(--danger);">
+      Sign out
+      </button>
       </div>`;
-    document.body.appendChild(sheet);
+      document.body.appendChild(sheet);
   },
 };

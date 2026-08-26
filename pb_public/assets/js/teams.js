@@ -2,8 +2,8 @@
  * =============================================================================
  * teams.js — Team registry page logic
  *
- * Self-contained — only needs pocketbase.umd.js + config.js.
- * No dependency on the main app modules (auth.js, db.js, etc.)
+ * Self-contained — only needs pocketbase.umd.js + config.js + shell.js.
+ * No dependency on the main app modules (auth.js, state.js, db.js, etc.)
  *
  * FEATURES
  * --------
@@ -11,6 +11,11 @@
  * - Filter by gender, age group
  * - Admin: add / edit / delete teams
  * - Everyone: view team profile with tournament history
+ * - Phase 9: optional ?tournament=<id> scopes the list down to that
+ *   tournament's actual roster (with seed/group context), instead of the
+ *   full cross-tournament registry. A banner explains the scope and links
+ *   back to the full registry. Search/gender/age filters still work within
+ *   the scoped subset.
  * =============================================================================
  */
 
@@ -29,7 +34,7 @@ const _Auth = {
 /* =============================================================================
    PAGE STATE
    ============================================================================= */
-let _masterTeams   = [];   // all fetched master_team records
+let _masterTeams   = [];   // all fetched master_team records (or the scoped subset)
 let _allStats      = {};   // { masterId → [team_stats records] }
 let _teamCategories= {};   // { masterId → [{ageGroup, gender, tournamentName}] } — derived from teams links, never stored on master_teams
 let _editingTeamId = null; // ID of team currently being edited in form modal
@@ -62,92 +67,24 @@ function _setConnStatus(online) {
   if (label) label.textContent = online ? 'Connected' : 'Offline';
 }
 
-function _renderAuthBar() {
-  const ctrl = document.getElementById('auth-controls');
-  const navUsers = document.getElementById('nav-users');
-  if (navUsers) navUsers.style.display = _Auth.isAdmin() ? '' : 'none';
-  const navCourts = document.getElementById('nav-courts');
-  if (navCourts) navCourts.style.display = _Auth.isAdmin() ? '' : 'none';
-  if (!ctrl) return;
-  const user = _Auth.user();
-  if (user) {
-    const roleLabel = {
-      super_admin      : '⚡ Super Admin',
-      tournament_admin : '✏️ Tournament Admin',
-      score_inputter   : '🖊️ Score Inputter',
-      fan              : '⭐ Fan',
-    }[user.role] || user.role;
-    ctrl.innerHTML = `
-      <span style="font-size:12px;color:var(--text-secondary);">
-        ${_esc(user.name || user.email)}
-        <span style="margin-left:6px;font-size:10px;padding:2px 6px;border-radius:4px;
-                     background:var(--bg-secondary);color:var(--text-tertiary);
-                     border:0.5px solid var(--border-light);">${roleLabel}</span>
-      </span>
-      <button class="btn sm ghost"
-              onclick="pb.authStore.clear();window.location.href='login.html'">
-        Sign out
-      </button>`;
-  } else {
-    ctrl.innerHTML = `<a href="login.html" class="btn sm primary">Sign in</a>`;
-  }
-
-  // Show add button for admins
-  const addBtn = document.getElementById('admin-add-btn');
-  if (addBtn) addBtn.style.display = _Auth.isAdmin() ? '' : 'none';
-  // Sync bottom nav Account tab — teams.js
-  const bottomAuthItem = document.getElementById('bottom-nav-auth');
-      if (bottomAuthItem) {
-        const u = _Auth.user();
-        if (u) {
-          bottomAuthItem.innerHTML = `<span class="nav-icon">👤</span>${u.name?.split(' ')[0] || 'Account'}`;
-          bottomAuthItem.href      = '#';
-          bottomAuthItem.onclick   = (e) => {
-            e.preventDefault();
-            // Inline sheet — same pattern as app.js
-            document.getElementById('_acct-sheet')?.remove();
-            const roleLabel = { super_admin: '⚡ Super Admin', tournament_admin: '✏️ Admin', score_inputter: '🖊️ Score Inputter', fan: '⭐ Fan' }[u.role] || '';
-            const sheet = document.createElement('div');
-            sheet.id    = '_acct-sheet';
-            sheet.innerHTML = `
-              <div style="position:fixed;inset:0;z-index:299;background:rgba(0,0,0,0.4);"
-                   onclick="document.getElementById('_acct-sheet').remove()"></div>
-              <div style="position:fixed;bottom:60px;left:0;right:0;z-index:300;
-                          background:var(--bg-primary);border-top:0.5px solid var(--border-light);
-                          border-radius:var(--radius-lg) var(--radius-lg) 0 0;
-                          padding:1.25rem 1.5rem 1.5rem;max-width:480px;margin:0 auto;">
-                <div style="font-size:14px;font-weight:600;color:var(--text-primary);margin-bottom:4px;">
-                  ${u.name || u.email}
-                </div>
-                <div style="font-size:11px;color:var(--text-tertiary);margin-bottom:1.25rem;">
-                  ${u.email}${roleLabel ? ` <span style="margin-left:8px;padding:2px 6px;border-radius:4px;background:var(--bg-secondary);border:0.5px solid var(--border-light);">${roleLabel}</span>` : ''}
-                </div>
-                <button onclick="pb.authStore.clear();window.location.href='login.html';"
-                        class="btn sm ghost"
-                        style="width:100%;justify-content:center;color:var(--danger);border-color:var(--danger);">
-                  Sign out
-                </button>
-              </div>`;
-            document.body.appendChild(sheet);
-          };
-        } else {
-          bottomAuthItem.innerHTML = `<span class="nav-icon">👤</span>Sign in`;
-          bottomAuthItem.href      = 'login.html';
-          bottomAuthItem.onclick   = null;
-        }
-      }
-}
-
 /* =============================================================================
    TEAMS OBJECT — all page actions
    ============================================================================= */
 const Teams = {
+
+  // Roster-scope state — set by load() when ?tournament=<id> is present.
+  _scopedTournamentId : null,
+  _scopedTournament    : null,   // full tournament record, for the banner
+  _scopedRosterInfo    : {},     // { masterId → { seed, group_name } }
 
   /* ── LOAD DATA ───────────────────────────────────────────────────────── */
 
   async load() {
     const list = document.getElementById('teams-registry-list');
     list.innerHTML = '<div class="empty-state"><span class="empty-icon">⏳</span>Loading...</div>';
+
+    const params = new URLSearchParams(window.location.search);
+    Teams._scopedTournamentId = params.get('tournament') || null;
 
     try {
       const [masterTeams, allLinks, allTournaments] = await Promise.all([
@@ -163,7 +100,6 @@ const Teams = {
           fields: 'age_group,gender', requestKey: null,
         }),
       ]);
-      _masterTeams = masterTeams;
 
       // Build masterTeamId -> [{ ageGroup, gender, tournamentName }]
       _teamCategories = {};
@@ -178,19 +114,39 @@ const Teams = {
         });
       });
 
-      // Fetch stats summary per team (just counts — not full expand)
-      const allStats = await pb.collection('team_stats').getFullList({
-        requestKey: null,
-      });
-      _allStats = {};
-      allStats.forEach(s => {
-        const mid = typeof s.master_team === 'object' ? s.master_team?.id : s.master_team;
-        if (!_allStats[mid]) _allStats[mid] = [];
-        _allStats[mid].push(s);
-      });
+      if (Teams._scopedTournamentId) {
+        // Narrow to just this tournament's roster, and remember each
+        // team's seed/group for display — a real roster view, not a
+        // filtered slice of the general registry.
+        const scopedLinks = allLinks.filter(l => l.tournament === Teams._scopedTournamentId);
+        const scopedIds   = new Set(scopedLinks.map(l => l.master_team));
+        Teams._scopedRosterInfo = {};
+        scopedLinks.forEach(l => {
+          Teams._scopedRosterInfo[l.master_team] = { seed: l.seed, group_name: l.group_name };
+        });
+        _masterTeams = masterTeams.filter(mt => scopedIds.has(mt.id));
+
+        try {
+          Teams._scopedTournament = await pb.collection('tournaments').getOne(
+            Teams._scopedTournamentId, { requestKey: null }
+          );
+        } catch (e) {
+          console.warn('Could not load scoped tournament', e.message);
+          Teams._scopedTournament = null;
+        }
+      } else {
+        _masterTeams = masterTeams;
+        Teams._scopedTournament = null;
+        Teams._scopedRosterInfo = {};
+      }
+
+      Teams._renderScopeBanner();
 
       // Filter dropdowns populated from the full tournament taxonomy —
-      // always available, even for a team not yet in any category.
+      // always available, even for a team not yet in any category. Kept
+      // unscoped even in roster view, so switching filters within a
+      // roster still makes sense (e.g. a mixed-gender event's single
+      // roster page).
       const ageGroups = [...new Set(allTournaments.map(t => t.age_group).filter(Boolean))].sort();
       const ageFilter = document.getElementById('filter-age');
       if (ageFilter) {
@@ -198,10 +154,11 @@ const Teams = {
           ageGroups.map(ag => `<option value="${_esc(ag)}">${_esc(ag)}</option>`).join('');
       }
 
-      const total = _masterTeams.length;
+      const total  = _masterTeams.length;
       const active = _masterTeams.filter(t => t.active !== false).length;
-      document.getElementById('registry-summary').textContent =
-        `${total} registered team${total !== 1 ? 's' : ''} · ${active} active`;
+      document.getElementById('registry-summary').textContent = Teams._scopedTournamentId
+        ? `${total} team${total !== 1 ? 's' : ''} on this roster`
+        : `${total} registered team${total !== 1 ? 's' : ''} · ${active} active`;
 
       Teams.renderList();
 
@@ -214,12 +171,40 @@ const Teams = {
     }
   },
 
+  // Banner shown only when viewing a tournament-scoped roster — names the
+  // tournament and links back to the full cross-tournament registry.
+  _renderScopeBanner() {
+    const el = document.getElementById('roster-scope-banner');
+    if (!el) return;
+
+    if (!Teams._scopedTournamentId) {
+      el.style.display = 'none';
+      el.innerHTML = '';
+      return;
+    }
+
+    const t     = Teams._scopedTournament;
+    const label = t ? (t.event_name || t.name) : 'this tournament';
+
+    el.style.display = 'block';
+    el.style.cssText = 'display:block;margin-top:1rem;padding:10px 14px;' +
+      'background:var(--bg-success);border-radius:var(--radius-md);' +
+      'border:0.5px solid var(--border-light);font-size:12px;color:var(--text-success);';
+    el.innerHTML = `
+      Showing the roster for <strong>${_esc(label)}</strong>.
+      <a href="teams.html" style="color:var(--accent);font-weight:600;text-decoration:none;margin-left:6px;">
+        View full registry →
+      </a>`;
+  },
+
   /* ── RENDER LIST ─────────────────────────────────────────────────────── */
 
   // Flat list, sorted by name — a category-based GROUPING doesn't make
   // sense anymore now that one master team can legitimately belong to
   // several categories at once. Each row shows its own set of category
   // badges instead (derived from _teamCategories, never a stored field).
+  // When roster-scoped, each row also shows its seed and group (if any)
+  // for THIS tournament specifically.
   renderList() {
     const search    = (document.getElementById('registry-search')?.value || '').toLowerCase();
     const gender    = document.getElementById('filter-gender')?.value || '';
@@ -256,6 +241,7 @@ const Teams = {
       const isInactive  = t.active === false;
       const cats        = _teamCategories[t.id] || [];
       const catLabels   = [...new Set(cats.map(c => [c.ageGroup, c.gender].filter(Boolean).join(' ')))];
+      const roster      = Teams._scopedTournamentId ? Teams._scopedRosterInfo[t.id] : null;
 
       return `
         <div onclick="Teams.openProfile('${t.id}')"
@@ -267,9 +253,11 @@ const Teams = {
           <div>
             <div style="font-size:13px;font-weight:500;color:var(--text-primary);
                         display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+              ${roster?.seed ? `<span style="font-size:10px;color:var(--text-tertiary);min-width:16px;">#${roster.seed}</span>` : ''}
               ${_esc(t.name)}
               ${t.club_name && t.club_name !== t.name ? `<span style="font-size:10px;color:var(--text-tertiary);">${_esc(t.club_name)}</span>` : ''}
               ${t.short_name ? `<span style="font-size:10px;color:var(--text-tertiary);background:var(--bg-secondary);padding:1px 6px;border-radius:4px;border:.5px solid var(--border-light);">${_esc(t.short_name)}</span>` : ''}
+              ${roster?.group_name ? `<span class="cat-badge">Group ${_esc(roster.group_name)}</span>` : ''}
               ${isInactive ? `<span style="font-size:10px;color:var(--text-tertiary);">inactive</span>` : ''}
             </div>
             <div style="margin-top:4px;display:flex;gap:5px;flex-wrap:wrap;">

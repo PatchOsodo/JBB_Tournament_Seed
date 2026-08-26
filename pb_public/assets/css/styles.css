@@ -2381,3 +2381,27 @@ select.tournament-name-input {
 @media (max-width: 768px) {
   .pool-assignment-row { grid-template-columns: 1fr; }
 }
+
+/* ── Detail-page nav strips (Overview/Fixtures/Results/Standings/Bracket/
+ *  Teams) — swipeable tab-bar behavior on narrow screens instead of
+ *  wrapping into multiple messy rows ─────────────────────────────────────── */
+#tourn-nav, #fx-nav, #res-nav, #st-nav, #bracket-nav {
+flex-wrap              : nowrap;
+overflow-x             : auto;
+-webkit-overflow-scrolling: touch;
+scrollbar-width        : none;
+padding-bottom         : 2px; /* room so the scrollbar-less drag area doesn't clip focus rings */
+}
+#tourn-nav::-webkit-scrollbar,
+#fx-nav::-webkit-scrollbar,
+#res-nav::-webkit-scrollbar,
+#st-nav::-webkit-scrollbar,
+#bracket-nav::-webkit-scrollbar { display: none; }
+
+#tourn-nav a, #tourn-nav span,
+#fx-nav a, #fx-nav span,
+#res-nav a, #res-nav span,
+#st-nav a, #st-nav span,
+#bracket-nav a, #bracket-nav span {
+flex-shrink: 0;
+}

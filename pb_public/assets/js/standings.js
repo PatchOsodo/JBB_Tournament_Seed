@@ -135,6 +135,7 @@ const StandingsPage = {
   _renderHeader(id) {
     const t = StandingsPage.tournament;
     document.getElementById('st-title').textContent = t.event_name || t.name;
+    document.title = `Standings — ${t.event_name || t.name} | Junior Ballers 254`;
 
     const metaParts = [t.name, t.format.replace(/_/g, ' ')];
     if (t.age_group || t.gender) metaParts.push([t.age_group, t.gender].filter(Boolean).join(' '));
@@ -146,7 +147,7 @@ const StandingsPage = {
       <a class="btn sm ghost" href="results.html?id=${id}">Results</a>
       <span class="btn sm primary" style="pointer-events:none;">Standings</span>
       <a class="btn sm ghost" href="bracket.html?id=${id}">Bracket</a>
-      <a class="btn sm ghost" href="teams.html">Teams registry</a>
+      <a class="btn sm ghost" href="teams.html?tournament=${id}">Teams registry</a>
     `;
   },
 
