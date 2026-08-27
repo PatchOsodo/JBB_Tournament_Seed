@@ -44,9 +44,10 @@ if ('serviceWorker' in navigator) {
     </div>
   </div>
 
-  <!-- Nav strip — Overview is this page; Bracket/Teams link to existing
-       public pages. Fixtures/Results/Standings as standalone public pages
-       are a later phase, so they're deliberately not linked here yet. -->
+  <!-- Nav strip — Overview is this page; for a single category this also
+       links to Bracket/Teams. For a multi-category event overview, this
+       links out to each category instead (see tournament.js _renderNav /
+       _renderEventNav). -->
   <div class="btn-row" id="tourn-nav" style="margin-bottom:1.25rem;"></div>
 
   <div class="error-banner" id="tourn-error">
@@ -55,6 +56,12 @@ if ('serviceWorker' in navigator) {
   </div>
 
   <div id="tourn-body">
+
+    <!-- Event-mode only — banner image (reuses the same banner_image field
+         already used by tournament cards), hidden entirely in single-
+         category mode. -->
+    <div id="tourn-banner" class="tourn-banner-wrap" style="display:none;"></div>
+
     <div class="stats-row" id="tourn-stats-row"></div>
 
     <div style="display:grid;grid-template-columns:1fr;gap:1.5rem;margin-top:0.5rem;">
@@ -78,6 +85,15 @@ if ('serviceWorker' in navigator) {
       </div>
 
     </div>
+
+    <!-- Event-mode only — per-category standings preview. Stays empty in
+         single-category mode and if no category has a real result yet. -->
+    <div id="tourn-standings-preview" style="margin-top:1.5rem;"></div>
+
+    <!-- Event-mode only — the category chips that let a user drill down
+         from the whole tournament into one category's full experience. -->
+    <div id="tourn-categories-list" style="margin-top:1.5rem;"></div>
+
   </div>
 
 </div><!-- /.app -->
@@ -86,6 +102,9 @@ if ('serviceWorker' in navigator) {
 <script src="assets/js/pocketbase.umd.js"></script>
 <script src="assets/js/shell.js"></script>
 <script src="assets/js/config.js"></script>
+<script src="assets/js/logger.js"></script>
+<script src="assets/js/generators.js"></script>
+<script src="assets/js/events.js"></script>
 <script src="assets/js/tournament.js"></script>
 </body>
 </html>

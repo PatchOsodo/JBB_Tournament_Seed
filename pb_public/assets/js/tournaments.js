@@ -17,8 +17,6 @@
 
 const pb = new PocketBase(CONFIG.API_BASE_URL);
 
-const AGE_ORDER = ['U10','U12','U13','U14','U16','U19','Senior','Open'];
-
 const TournamentsPage = {
 
   groups : [],   // one entry per event (or per standalone tournament)
@@ -37,7 +35,7 @@ const TournamentsPage = {
       const teamCounts = {};
       teamRows.forEach(r => { teamCounts[r.tournament] = (teamCounts[r.tournament] || 0) + 1; });
 
-      TournamentsPage.groups = TournamentsPage._buildGroups(tournaments, teamCounts);
+      TournamentsPage.groups = Events.buildSummarizedGroups(tournaments, teamCounts);
       TournamentsPage.render();
     } catch (e) {
       console.error('TournamentsPage.init failed', e);
@@ -47,65 +45,8 @@ const TournamentsPage = {
     }
   },
 
-  // Groups tournaments by event_name; a tournament with no event_name is
-  // its own single-tournament group — same rule App.loadTournaments() uses.
-  _buildGroups(tournaments, teamCounts) {
-    const byEvent    = {};
-    const standalone = [];
-
-    tournaments.forEach(t => {
-      const ev = (t.event_name || '').trim();
-      if (ev) {
-        if (!byEvent[ev]) byEvent[ev] = [];
-        byEvent[ev].push(t);
-      } else {
-        standalone.push(t);
-      }
-    });
-
-    const groups = [];
-    Object.entries(byEvent).forEach(([eventName, cats]) => {
-      groups.push(TournamentsPage._makeGroup(eventName, cats, teamCounts));
-    });
-    standalone.forEach(t => {
-      groups.push(TournamentsPage._makeGroup(t.event_name || t.name, [t], teamCounts));
-    });
-
-    groups.sort((a, b) => b.latestUpdated - a.latestUpdated);
-    return groups;
-  },
-
-  _makeGroup(displayName, tournamentsInGroup, teamCounts) {
-    const allDone   = tournamentsInGroup.every(t => t.status === 'completed');
-    const anyActive = tournamentsInGroup.some(t => t.status === 'active');
-    const status    = allDone ? 'completed' : anyActive ? 'active' : 'pending';
-
-    const ageGroups = [...new Set(tournamentsInGroup.map(t => t.age_group).filter(Boolean))]
-      .sort((a, b) => AGE_ORDER.indexOf(a) - AGE_ORDER.indexOf(b));
-
-    const teamCount = tournamentsInGroup.reduce((sum, t) => sum + (teamCounts[t.id] || 0), 0);
-
-    const bannerOwner = tournamentsInGroup.find(t => t.banner_image) || null;
-
-    // See file header — active > pending > completed for the link target.
-    const priority = { active: 0, pending: 1, completed: 2 };
-    const linkTarget = [...tournamentsInGroup].sort(
-      (a, b) => (priority[a.status] ?? 3) - (priority[b.status] ?? 3)
-    )[0];
-
-    const latestUpdated = Math.max(...tournamentsInGroup.map(t => new Date(t.updated).getTime()));
-
-    return {
-      displayName,
-      status,
-      ageGroups,
-      teamCount,
-      categoryCount : tournamentsInGroup.length,
-      bannerOwner,
-      linkId        : linkTarget.id,
-      latestUpdated,
-    };
-  },
+  // Event-grouping + per-event summary fields now live in the shared
+  // Events module (events.js) — see Events.buildSummarizedGroups.
 
   setFilter(status, btnEl) {
     TournamentsPage.filter = status;
@@ -154,6 +95,13 @@ const TournamentsPage = {
         (extra > 0 ? `<span class="cat-badge">+${extra}</span>` : '')
       : `<span class="cat-badge cat-badge-format">${g.categoryCount} categor${g.categoryCount === 1 ? 'y' : 'ies'}</span>`;
 
+    // Multi-category events go to the new tournament-level overview;
+    // a standalone single-category "event" goes straight to its category
+    // page, same as before.
+    const href = g.categoryCount > 1
+      ? `tournament.html?event=${encodeURIComponent(g.displayName)}`
+      : `tournament.html?id=${g.linkId}`;
+
     return `<div class="tournament-card">
       ${bannerHtml}
       <div class="tournament-card-body">
@@ -166,7 +114,7 @@ const TournamentsPage = {
           ${g.teamCount} team${g.teamCount === 1 ? '' : 's'} · ${g.categoryCount} categor${g.categoryCount === 1 ? 'y' : 'ies'}
         </div>
         <div class="tournament-card-actions">
-          <a class="btn sm primary" href="tournament.html?id=${g.linkId}" style="width:100%;justify-content:center;">
+          <a class="btn sm primary" href="${href}" style="width:100%;justify-content:center;">
             View Tournament
           </a>
         </div>

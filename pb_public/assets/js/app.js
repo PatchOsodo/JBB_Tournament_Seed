@@ -69,86 +69,10 @@ const App = {
     App._loadHeroMatchSnippet();
     App._loadRecentChampions();
   },
-
-  // "Up Next" — real scheduled fixtures only: both teams already known
-  // (home_team/away_team set) and no result entered yet. Scoped to
-  // currently active tournaments, since pending tournaments haven't had
-  // fixtures generated. No live/in-progress inference — that concept
-  // doesn't exist in the data model yet (deliberately deferred until a
-  // real scoring module tracks it). Renders nothing if none qualify.
-  async _loadUpcomingGames() {
-    const el = document.getElementById('upcoming-games-section');
-    if (!el) return;
-
-    const activeIds = (State.tournaments || [])
-    .filter(t => t.status === 'active')
-    .map(t => t.id);
-    if (!activeIds.length) return;
-
-    try {
-      const filter = activeIds.map(id => `tournament="${id}"`).join('||');
-      const upcoming = await pb.collection('fixtures').getList(1, 6, {
-        filter: `(${filter})&&is_bye=false&&status="scheduled"&&home_team!=""&&away_team!=""`,
-                                                               sort  : 'round,match_number',
-                                                               expand: 'home_team,away_team,tournament',
-                                                               requestKey: null,
-      });
-
-      if (!upcoming.items.length) return; // nothing scheduled with both teams known yet
-
-      el.innerHTML = `
-      <div class="section-heading">Up Next</div>
-      <div class="upcoming-games-rail">
-      ${upcoming.items.map(App._upcomingGameCard).join('')}
-      </div>`;
-    } catch (e) {
-      Logger.warn('_loadUpcomingGames failed', { error: e.message });
-    }
-  },
-
-  _upcomingGameCard(fx) {
-    const home      = fx.expand?.home_team?.name    || 'TBD';
-    const away      = fx.expand?.away_team?.name    || 'TBD';
-    const catName   = fx.expand?.tournament?.name       || '';
-    const eventName = fx.expand?.tournament?.event_name || '';
-    const timeCourt = [fx.scheduled_time, fx.court_label].filter(Boolean).join(' · ');
-
-    return `<div class="upcoming-game-card">
-    ${catName ? `<div class="upcoming-game-category">${escHtml(catName)}</div>` : ''}
-    <div class="upcoming-game-teams">
-    <span>${escHtml(home)}</span>
-    <span class="upcoming-game-vs">vs</span>
-    <span>${escHtml(away)}</span>
-    </div>
-    ${timeCourt   ? `<div class="upcoming-game-meta">${escHtml(timeCourt)}</div>`   : `<div class="upcoming-game-meta upcoming-game-meta-muted">Time &amp; court TBC</div>`}
-    ${eventName   ? `<div class="upcoming-game-event">${escHtml(eventName)}</div>`   : ''}
-    </div>`;
-  },
-
-  // Groups a tournament list by event_name (standalone tournaments count as
-  // their own single-tournament group) — same concept loadTournaments()
-  // already uses for the directory. Shared by the featured-tournament card
-  // and the "also happening now" strip so both agree on what an "event" is.
-  _groupEventsByName(tournamentList) {
-    const groups = {};
-    tournamentList.forEach(t => {
-      const key = (t.event_name || '').trim() || t.id;
-      if (!groups[key]) groups[key] = [];
-      groups[key].push(t);
-    });
-    return groups;
-  },
-
-  // Largest group first, ties broken by most recently updated — the same
-  // "most relevant" ordering used to pick the hero's featured event.
-  _sortGroupsByRelevance(groups) {
-    return Object.entries(groups).sort((a, b) => {
-      if (b[1].length !== a[1].length) return b[1].length - a[1].length;
-      const aLatest = Math.max(...a[1].map(t => new Date(t.updated).getTime()));
-      const bLatest = Math.max(...b[1].map(t => new Date(t.updated).getTime()));
-      return bLatest - aLatest;
-    });
-  },
+  // Event-grouping logic ("which categories belong to the same event, and
+  // which one is most relevant") now lives in the shared Events module
+  // (events.js) so this page and /tournaments.html can never disagree.
+  // See Events.groupByEventName / Events.sortGroupsByRelevance.
 
   // Features the most relevant active tournament/event on the homepage —
   // real counts only (teams registered, categories = number of tournament
@@ -167,8 +91,8 @@ const App = {
     const pool   = active.length ? active : tournaments.filter(t => t.status === 'pending');
     if (!pool.length) return;
 
-    const groups = App._groupEventsByName(pool);
-    const [, bestGroup] = App._sortGroupsByRelevance(groups)[0];
+    const groups = Events.groupByEventName(pool);
+    const [, bestGroup] = Events.sortGroupsByRelevance(groups)[0];
 
     const displayName   = bestGroup[0].event_name || bestGroup[0].name;
     const categoryCount = bestGroup.length;
@@ -187,7 +111,7 @@ const App = {
 
     const linkHref = bestGroup.length === 1
     ? `bracket.html?id=${bestGroup[0].id}`
-    : `tournaments.html`; // multi-category event — send to discovery page, not a dead in-page anchor
+    : `tournament.html?event=${encodeURIComponent(displayName)}`;
     const statusLabel = active.length ? 'Ongoing' : 'Coming up';
 
     el.innerHTML = `
@@ -217,7 +141,7 @@ const App = {
     const active = (State.tournaments || []).filter(t => t.status === 'active');
     if (active.length < 2) return; // nothing else running concurrently
 
-    const groups = App._groupEventsByName(active);
+    const groups = Events.groupByEventName(active);
     const sorted = App._sortGroupsByRelevance(groups);
     if (sorted.length < 2) return; // only one active event overall — already featured
 
@@ -236,7 +160,7 @@ const App = {
     const teamCount     = group.reduce((sum, t) => sum + (State.teamCounts?.[t.id] || 0), 0);
     const linkHref = group.length === 1
     ? `bracket.html?id=${group[0].id}`
-    : `tournaments.html`;
+    : `tournament.html?event=${encodeURIComponent(displayName)}`;
 
     return `<a href="${linkHref}" class="other-active-card">
     <div class="other-active-name">${escHtml(displayName)}</div>
