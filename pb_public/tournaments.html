@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tournaments — Junior Ballers 254</title>
+<link rel="icon" type="image/x-icon" href="assets/img/favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/img/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/img/favicon-192.png">
+<link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/styles.css">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1a5c28">
+<meta name="description" content="{{DESCRIPTION}}">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Junior Ballers 254">
+<meta property="og:title" content="{{TITLE}}">
+<meta property="og:description" content="{{DESCRIPTION}}">
+<meta name="twitter:card" content="summary">
+</head>
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('assets/js/sw.js').catch(console.warn);
+}
+</script>
+<body>
+
+<!-- Nav is injected by Shell.injectNav() at boot — see assets/partials/nav.html -->
+
+<div class="page-wrapper">
+<div class="app">
+
+  <div class="app-header">
+    <div>
+      <h1>Tournaments</h1>
+      <p>Every JB254 tournament — active, upcoming, and completed</p>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:8px;margin-bottom:1rem;flex-wrap:wrap;">
+    <input type="text" id="tournaments-search" placeholder="Search tournaments..."
+           oninput="TournamentsPage.filterBySearch()"
+           style="flex:1;min-width:160px;padding:8px 12px;font-size:13px;
+                  border:1px solid var(--border-light);border-radius:var(--radius-md);
+                  background:var(--bg-secondary);color:var(--text-primary);" />
+  </div>
+
+  <div class="tab-row" id="tournaments-filter" style="margin-bottom:1.25rem;">
+    <button class="tab active" onclick="TournamentsPage.setFilter('all', this)">All</button>
+    <button class="tab" onclick="TournamentsPage.setFilter('active', this)">Active</button>
+    <button class="tab" onclick="TournamentsPage.setFilter('pending', this)">Upcoming</button>
+    <button class="tab" onclick="TournamentsPage.setFilter('completed', this)">Completed</button>
+  </div>
+
+  <div id="tournaments-grid">
+    <div class="tournament-grid">
+      <div class="skeleton-card"></div>
+      <div class="skeleton-card"></div>
+      <div class="skeleton-card"></div>
+    </div>
+  </div>
+
+</div><!-- /.app -->
+</div><!-- /.page-wrapper -->
+
+<script src="assets/js/pocketbase.umd.js"></script>
+<script src="assets/js/shell.js"></script>
+<script src="assets/js/config.js"></script>
+<script src="assets/js/tournaments.js"></script>
+</body>
+</html>

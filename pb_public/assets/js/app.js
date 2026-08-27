@@ -187,7 +187,7 @@ const App = {
 
     const linkHref = bestGroup.length === 1
     ? `bracket.html?id=${bestGroup[0].id}`
-    : `index.html#tournament-list`; // multi-category event — no single bracket to link to
+    : `tournaments.html`; // multi-category event — send to discovery page, not a dead in-page anchor
     const statusLabel = active.length ? 'Ongoing' : 'Coming up';
 
     el.innerHTML = `
@@ -236,7 +236,7 @@ const App = {
     const teamCount     = group.reduce((sum, t) => sum + (State.teamCounts?.[t.id] || 0), 0);
     const linkHref = group.length === 1
     ? `bracket.html?id=${group[0].id}`
-    : `index.html#tournament-list`;
+    : `tournaments.html`;
 
     return `<a href="${linkHref}" class="other-active-card">
     <div class="other-active-name">${escHtml(displayName)}</div>
@@ -375,10 +375,14 @@ const App = {
   // finished yet, the section stays empty rather than showing anything
   // invented. Kept as a single query serving both the hero's compact
   // snippet and the fuller "Latest Results" list below it.
+  // Renamed conceptually (still called _loadHeroMatchSnippet from
+  // _loadHeroContent — not renaming the call site to keep this a pure
+  // Phase 1 diff) but it no longer writes into the hero. The most recent
+  // completed match is now just the first card in the Latest Results rail,
+  // not a duplicated teaser above it.
   async _loadHeroMatchSnippet() {
-    const snippetEl = document.getElementById('hero-match-snippet');
     const resultsEl = document.getElementById('latest-results-section');
-    if (!snippetEl && !resultsEl) return;
+    if (!resultsEl) return;
 
     try {
       const recent = await pb.collection('fixtures').getList(1, 5, {
@@ -389,32 +393,15 @@ const App = {
       });
       if (!recent.items.length) return; // no data yet — stays empty, not fabricated
 
-      const [latest, ...rest] = recent.items;
-
-      if (snippetEl) {
-        const home = latest.expand?.home_team?.name || 'Home';
-        const away = latest.expand?.away_team?.name || 'Away';
-        const catName = latest.expand?.tournament?.name || '';
-        snippetEl.innerHTML = `
-        <span class="pulse-badge pulse-live"><span class="pulse-dot"></span>Final</span>
-        <div class="snippet-teams"><span>${escHtml(home)}</span><span class="snippet-score">${latest.home_score}</span></div>
-        <div class="snippet-teams"><span>${escHtml(away)}</span><span class="snippet-score">${latest.away_score}</span></div>
-        ${catName ? `<div class="snippet-meta">${escHtml(catName)}</div>` : ''}
-        `;
-      }
-
-      if (resultsEl && rest.length) {
-        resultsEl.innerHTML = `
-        <div class="section-heading">Latest Results</div>
-        <div class="results-rail">
-        ${rest.map(App._resultCard).join('')}
-        </div>`;
-      }
+      resultsEl.innerHTML = `
+      <div class="section-heading">Latest Results</div>
+      <div class="results-rail">
+      ${recent.items.map(App._resultCard).join('')}
+      </div>`;
     } catch (e) {
       Logger.warn('_loadHeroMatchSnippet failed', { error: e.message });
     }
   },
-
   _resultCard(fx) {
     const home    = fx.expand?.home_team?.name || 'Home';
     const away    = fx.expand?.away_team?.name || 'Away';
@@ -552,7 +539,7 @@ const App = {
       let html = '';
 
       // Favourites section for guests and admins — unchanged, still shown
-      // above the status buckets regardless of what status those
+      // above whatever comes next regardless of what status those
       // favourited tournaments happen to be in right now.
       if (Auth.canFavourite() && State.favourites.length) {
         const favIds = new Set(
@@ -573,16 +560,40 @@ const App = {
         }
       }
 
-      // Directory, organized by status — same statuses already used
-      // everywhere else in the app (status-badge classes, admin filters).
-      const active    = tournaments.filter(t => t.status === 'active');
-      const pending    = tournaments.filter(t => t.status === 'pending');
-      const completed = tournaments.filter(t => t.status === 'completed');
+      // Full status-bucketed directory (with per-category admin actions:
+      // Resume/Organise/Delete/Add-category) is admin-only now — that's
+      // where those workflows actually live, since admin.html doesn't
+      // support them. Non-admins get a single link out to tournaments.html
+      // instead of the complete Active/Upcoming/Completed breakdown —
+      // that page is now the public discovery surface.
+      const statusFilterEl = document.getElementById('tournament-status-filter');
 
-      html += App._renderDirectorySection('Active', active,
-                                          'There are currently no active tournaments.');
-      html += App._renderDirectorySection('Upcoming', pending);
-      html += App._renderDirectorySection('Completed', completed);
+      if (Auth.isAdmin()) {
+        if (statusFilterEl) statusFilterEl.style.display = '';
+
+        const active    = tournaments.filter(t => t.status === 'active');
+        const pending    = tournaments.filter(t => t.status === 'pending');
+        const completed = tournaments.filter(t => t.status === 'completed');
+
+        html += App._renderDirectorySection('Active', active,
+                                            'There are currently no active tournaments.');
+        html += App._renderDirectorySection('Upcoming', pending);
+        html += App._renderDirectorySection('Completed', completed);
+      } else {
+        if (statusFilterEl) statusFilterEl.style.display = 'none';
+
+        html += `
+        <div style="text-align:center;padding:2rem 1rem;background:var(--bg-primary);
+                    border:0.5px solid var(--border-light);border-radius:var(--radius-lg);">
+          <div style="font-size:15px;font-weight:600;color:var(--text-primary);margin-bottom:6px;">
+            Browse every tournament
+          </div>
+          <p style="font-size:13px;color:var(--text-tertiary);margin-bottom:1rem;">
+            Active, upcoming, and completed — all in one place.
+          </p>
+          <a href="tournaments.html" class="btn primary">Explore All Tournaments →</a>
+        </div>`;
+      }
 
       list.innerHTML = html;
 
@@ -797,7 +808,7 @@ const App = {
     <div style="font-size:11px;color:var(--text-tertiary);margin-top:2px;">
     ${formatText} · ${dateText}
     </div>
-    ${App._deadlineBadge(t.registration_deadline)}
+    ${Auth.isAdmin() ? App._deadlineBadge(t.registration_deadline) : ''}
     </div>
     <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
     <span class="status-badge badge-${t.status}">${App._statusLabel(t.status)}</span>
