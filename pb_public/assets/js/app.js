@@ -47,8 +47,8 @@ const App = {
     try {
       const [teamsCount, categoriesCount, matchesCount] = await Promise.all([
         pb.collection('master_teams').getList(1, 1, { requestKey: null }),
-                                                                            pb.collection('tournaments').getList(1, 1, { requestKey: null }),
-                                                                            pb.collection('fixtures').getList(1, 1, { filter: `status="completed"`, requestKey: null }),
+        pb.collection('tournaments').getList(1, 1, { requestKey: null }),
+        pb.collection('fixtures').getList(1, 1, { filter: `status="completed"`, requestKey: null }),
       ]);
 
       const banner = document.getElementById('hero-stats-banner');
@@ -57,7 +57,6 @@ const App = {
         <div class="stats-banner-item"><div class="stat-value">${teamsCount.totalItems}+</div><div class="stat-label">Teams</div></div>
         <div class="stats-banner-item"><div class="stat-value">${categoriesCount.totalItems}</div><div class="stat-label">Categories</div></div>
         <div class="stats-banner-item"><div class="stat-value">${matchesCount.totalItems}</div><div class="stat-label">Matches played</div></div>
-        <div class="stats-banner-item"><div class="pulse-badge pulse-live" style="margin-top:2px;"><span class="pulse-dot"></span>Live scores</div></div>
         </div>`;
       }
     } catch (e) {
@@ -198,7 +197,7 @@ const App = {
     <div class="featured-tournament-stats">
     <div><span class="score-display-md">${teamCount}</span><span class="featured-stat-label">Teams</span></div>
     <div><span class="score-display-md">${categoryCount}</span><span class="featured-stat-label">Categor${categoryCount === 1 ? 'y' : 'ies'}</span></div>
-    <div><span class="score-display-md">${gameCount}</span><span class="featured-stat-label">Games</span></div>
+    <div><span class="score-display-md">${gameCount}</span><span class="featured-stat-label">Games scheduled</span></div>
     </div>
     <a href="${linkHref}" class="btn primary featured-tournament-cta">Follow Tournament</a>
     </div>`;
@@ -288,6 +287,11 @@ const App = {
         ).slice(0, 5);
         if (!rows.length) return;
       }
+
+      // Don't render a table that's entirely 0-0-0 — that isn't a standings
+      // preview, it's confirmation nothing has been played yet. Wait until
+      // at least one match in the previewed group has a result.
+      if (!rows.some(r => r.played > 0)) return;
 
       const tournamentLabel = featuredTournament.event_name || featuredTournament.name;
       const groupLabel = el.dataset.groupLabel ? ` — ${escHtml(el.dataset.groupLabel)}` : '';
@@ -735,7 +739,7 @@ const App = {
       ${t.gender    ? `<span class="cat-badge">${escHtml(t.gender)}</span>`    : ''}
       <span class="cat-badge cat-badge-format">${formatText}</span>
       </div>` : `<div class="tournament-card-badges"><span class="cat-badge cat-badge-format">${formatText}</span></div>`}
-      ${App._deadlineBadge(t.registration_deadline)}
+      ${Auth.isAdmin() ? App._deadlineBadge(t.registration_deadline) : ''}
       ${slotHtml}
       <div class="tournament-card-actions">
       ${resumeBtn}
