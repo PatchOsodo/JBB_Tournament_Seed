@@ -53,11 +53,11 @@ if ('serviceWorker' in navigator) {
        HERO — public landing section, sits above the dashboard
        ===================================================================== -->
   <div class="hero-section hero-fade-in">
-    <div class="hero-pretitle">JUNIOR BALLERS KENYA</div>
-    <h2 class="hero-headline">Empowering Next-Gen Ballers Across Kenya</h2>
+    <div class="hero-pretitle">JB254 TOURNAMENTS</div>
+    <h2 class="hero-headline">Follow the Game.</h2>
     <p class="hero-subheadline">
-      Real-time tournament tracking, live bracket progression, and automated
-      team management from U10 to Senior divisions.
+      Fixtures. Results. Standings. Brackets. Everything happening across
+      Junior Ballers basketball, from U10 to Senior divisions.
     </p>
 
     <!-- Live/recent match snippet — real data if available, no photos -->
@@ -65,9 +65,24 @@ if ('serviceWorker' in navigator) {
 
     <div class="hero-ctas">
       <a href="#tournament-list" class="btn primary hero-cta-primary">Explore Tournaments</a>
-      <a href="login.html" class="btn ghost hero-cta-secondary" id="hero-cta-secondary">Organizer Portal / Login</a>
+      <a href="login.html" class="btn ghost hero-cta-secondary" id="hero-cta-secondary">Admin Login</a>
     </div>
   </div>
+
+  <!-- Featured tournament — real active/upcoming event, empty if none -->
+  <div id="hero-featured-tournament" class="hero-fade-in"></div>
+
+  <!-- Other currently-active events, if more than one is running -->
+  <div id="other-active-tournaments" class="hero-fade-in"></div>
+
+  <!-- Up Next — real scheduled fixtures with both teams known, empty if none -->
+  <div id="upcoming-games-section" class="hero-fade-in"></div>
+
+  <!-- Latest Results — real completed fixtures beyond the hero snippet -->
+  <div id="latest-results-section" class="hero-fade-in"></div>
+
+  <!-- Standings preview — scoped to the featured tournament, empty for elimination -->
+  <div id="standings-preview-section" class="hero-fade-in"></div>
 
   <!-- Stat counter — real numbers, computed live -->
   <div id="hero-stats-banner" class="hero-fade-in"></div>
@@ -84,10 +99,9 @@ if ('serviceWorker' in navigator) {
        ===================================================================== -->
   <div class="screen active" id="screen-home">
 
-    <div style="display:flex;align-items:center;justify-content:space-between;
-                margin-bottom:0.75rem;flex-wrap:wrap;gap:8px;">
-      <p class="section-label" style="margin:0">Tournaments</p>
-      <div style="display:flex;gap:8px;">
+    <div class="section-heading-row">
+      <p class="section-label" style="margin:0">Tournament Directory</p>
+      <div class="admin-toolbar" id="home-admin-toolbar">
         <button class="btn sm ghost" id="btn-organise" onclick="App.openOrganiseModal()">
           Organise events
         </button>
@@ -230,16 +244,20 @@ if ('serviceWorker' in navigator) {
         <div class="schedule-title" id="sched-title"></div>
         <div class="schedule-meta"  id="sched-meta"></div>
       </div>
-      <div class="btn-row">
+      <div class="tournament-hub-actions">
         <span class="status-badge badge-pending" id="tournament-status-badge">pending</span>
-        <button class="btn sm ghost" id="btn-manage-teams" onclick="App.openManageTeamsModal()" style="display:none;">👥 Manage teams</button>
-        <button class="btn sm ghost" id="btn-regenerate" onclick="App.regenerateFixtures()" style="display:none;">↺ Regenerate fixtures</button>
-        <button class="btn sm ghost" id="btn-results" onclick="App.openResultsModal()" style="display:none;">📄 Results</button>
-        <a href="stats.html" class="btn sm ghost">📊 Stats</a>
-        <a id="bracket-page-link" class="btn sm ghost" href="#">
-          Full bracket
-        </a>
-        <button class="btn sm" onclick="App.goToHome()">← Home</button>
+        <div class="btn-row">
+          <button class="btn sm ghost" id="btn-results" onclick="App.openResultsModal()" style="display:none;">📄 Results</button>
+          <a href="stats.html" class="btn sm ghost">📊 Stats</a>
+          <a id="bracket-page-link" class="btn sm ghost" href="#">
+            Full bracket
+          </a>
+          <button class="btn sm" onclick="App.goToHome()">← Home</button>
+        </div>
+        <div class="admin-toolbar" id="tournament-hub-admin-toolbar">
+          <button class="btn sm ghost" id="btn-manage-teams" onclick="App.openManageTeamsModal()" style="display:none;">👥 Manage teams</button>
+          <button class="btn sm ghost" id="btn-regenerate" onclick="App.regenerateFixtures()" style="display:none;">↺ Regenerate fixtures</button>
+        </div>
       </div>
     </div>
 
@@ -256,16 +274,18 @@ if ('serviceWorker' in navigator) {
     <div class="tab-row"   id="tab-row"></div>
     <div id="tab-panels"></div>
 
-    <!-- Debug log panel -->
-    <div class="log-toggle" onclick="UI.toggleLog()">
-      <span id="log-arrow">&gt;&gt;</span> Debug log
-    </div>
-    <div class="log-panel" id="log-panel">
-      <div class="log-actions">
-        <button class="log-btn" onclick="Logger.copyToClipboard()">Copy</button>
-        <button class="log-btn" onclick="Logger.clear()">Clear</button>
+    <!-- Debug log panel — admin-only; visibility toggled in App._renderAuthBar() -->
+    <div id="debug-log-wrap" style="display:none;">
+      <div class="log-toggle" onclick="UI.toggleLog()">
+        <span id="log-arrow">&gt;&gt;</span> Debug log
       </div>
-      <div id="log-entries"></div>
+      <div class="log-panel" id="log-panel">
+        <div class="log-actions">
+          <button class="log-btn" onclick="Logger.copyToClipboard()">Copy</button>
+          <button class="log-btn" onclick="Logger.clear()">Clear</button>
+        </div>
+        <div id="log-entries"></div>
+      </div>
     </div>
 
   </div>

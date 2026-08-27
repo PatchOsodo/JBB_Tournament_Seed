@@ -30,7 +30,7 @@ const App = {
     UI.setConnectionStatus(online);
     if (!online) {
       UI.showError('home-error', 'home-error-msg',
-                   'Cannot reach PocketBase. Ensure it is running.');
+                   "We're having trouble reaching the tournament server. Some information may not load — please check your connection and try again.");
     }
 
     App._initSetupScreen();
@@ -64,9 +64,262 @@ const App = {
       Logger.warn('_loadHeroContent stats failed', { error: e.message });
     }
 
-    App._loadHeroMatchSnippet();
     App._loadUpcomingGames();
+    App._loadFeaturedTournament();
+    App._loadOtherActiveTournaments();
+    App._loadHeroMatchSnippet();
     App._loadRecentChampions();
+  },
+
+  // "Up Next" — real scheduled fixtures only: both teams already known
+  // (home_team/away_team set) and no result entered yet. Scoped to
+  // currently active tournaments, since pending tournaments haven't had
+  // fixtures generated. No live/in-progress inference — that concept
+  // doesn't exist in the data model yet (deliberately deferred until a
+  // real scoring module tracks it). Renders nothing if none qualify.
+  async _loadUpcomingGames() {
+    const el = document.getElementById('upcoming-games-section');
+    if (!el) return;
+
+    const activeIds = (State.tournaments || [])
+    .filter(t => t.status === 'active')
+    .map(t => t.id);
+    if (!activeIds.length) return;
+
+    try {
+      const filter = activeIds.map(id => `tournament="${id}"`).join('||');
+      const upcoming = await pb.collection('fixtures').getList(1, 6, {
+        filter: `(${filter})&&is_bye=false&&status="scheduled"&&home_team!=""&&away_team!=""`,
+                                                               sort  : 'round,match_number',
+                                                               expand: 'home_team,away_team,tournament',
+                                                               requestKey: null,
+      });
+
+      if (!upcoming.items.length) return; // nothing scheduled with both teams known yet
+
+      el.innerHTML = `
+      <div class="section-heading">Up Next</div>
+      <div class="upcoming-games-rail">
+      ${upcoming.items.map(App._upcomingGameCard).join('')}
+      </div>`;
+    } catch (e) {
+      Logger.warn('_loadUpcomingGames failed', { error: e.message });
+    }
+  },
+
+  _upcomingGameCard(fx) {
+    const home      = fx.expand?.home_team?.name    || 'TBD';
+    const away      = fx.expand?.away_team?.name    || 'TBD';
+    const catName   = fx.expand?.tournament?.name       || '';
+    const eventName = fx.expand?.tournament?.event_name || '';
+    const timeCourt = [fx.scheduled_time, fx.court_label].filter(Boolean).join(' · ');
+
+    return `<div class="upcoming-game-card">
+    ${catName ? `<div class="upcoming-game-category">${escHtml(catName)}</div>` : ''}
+    <div class="upcoming-game-teams">
+    <span>${escHtml(home)}</span>
+    <span class="upcoming-game-vs">vs</span>
+    <span>${escHtml(away)}</span>
+    </div>
+    ${timeCourt   ? `<div class="upcoming-game-meta">${escHtml(timeCourt)}</div>`   : `<div class="upcoming-game-meta upcoming-game-meta-muted">Time &amp; court TBC</div>`}
+    ${eventName   ? `<div class="upcoming-game-event">${escHtml(eventName)}</div>`   : ''}
+    </div>`;
+  },
+
+  // Groups a tournament list by event_name (standalone tournaments count as
+  // their own single-tournament group) — same concept loadTournaments()
+  // already uses for the directory. Shared by the featured-tournament card
+  // and the "also happening now" strip so both agree on what an "event" is.
+  _groupEventsByName(tournamentList) {
+    const groups = {};
+    tournamentList.forEach(t => {
+      const key = (t.event_name || '').trim() || t.id;
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(t);
+    });
+    return groups;
+  },
+
+  // Largest group first, ties broken by most recently updated — the same
+  // "most relevant" ordering used to pick the hero's featured event.
+  _sortGroupsByRelevance(groups) {
+    return Object.entries(groups).sort((a, b) => {
+      if (b[1].length !== a[1].length) return b[1].length - a[1].length;
+      const aLatest = Math.max(...a[1].map(t => new Date(t.updated).getTime()));
+      const bLatest = Math.max(...b[1].map(t => new Date(t.updated).getTime()));
+      return bLatest - aLatest;
+    });
+  },
+
+  // Features the most relevant active tournament/event on the homepage —
+  // real counts only (teams registered, categories = number of tournament
+  // records in the event, games = actual fixture count). Falls back to the
+  // most relevant upcoming (pending) event if nothing is active yet. If
+  // there's truly nothing to feature, the card stays empty — no invented
+  // tournament, no placeholder numbers.
+  async _loadFeaturedTournament() {
+    const el = document.getElementById('hero-featured-tournament');
+    if (!el) return;
+
+    const tournaments = State.tournaments || [];
+    if (!tournaments.length) return;
+
+    const active = tournaments.filter(t => t.status === 'active');
+    const pool   = active.length ? active : tournaments.filter(t => t.status === 'pending');
+    if (!pool.length) return;
+
+    const groups = App._groupEventsByName(pool);
+    const [, bestGroup] = App._sortGroupsByRelevance(groups)[0];
+
+    const displayName   = bestGroup[0].event_name || bestGroup[0].name;
+    const categoryCount = bestGroup.length;
+    const teamCount     = bestGroup.reduce((sum, t) => sum + (State.teamCounts?.[t.id] || 0), 0);
+
+    let gameCount = 0;
+    try {
+      const filter = bestGroup.map(t => `tournament="${t.id}"`).join('||');
+      const res = await pb.collection('fixtures').getList(1, 1, {
+        filter: `(${filter})&&is_bye=false`, requestKey: null,
+      });
+      gameCount = res.totalItems;
+    } catch (e) {
+      Logger.warn('_loadFeaturedTournament: fixture count failed', { error: e.message });
+    }
+
+    const linkHref = bestGroup.length === 1
+    ? `bracket.html?id=${bestGroup[0].id}`
+    : `index.html#tournament-list`; // multi-category event — no single bracket to link to
+    const statusLabel = active.length ? 'Ongoing' : 'Coming up';
+
+    el.innerHTML = `
+    <div class="featured-tournament-card">
+    <div class="featured-tournament-eyebrow">${escHtml(statusLabel)}</div>
+    <div class="featured-tournament-name">${escHtml(displayName)}</div>
+    <div class="featured-tournament-stats">
+    <div><span class="score-display-md">${teamCount}</span><span class="featured-stat-label">Teams</span></div>
+    <div><span class="score-display-md">${categoryCount}</span><span class="featured-stat-label">Categor${categoryCount === 1 ? 'y' : 'ies'}</span></div>
+    <div><span class="score-display-md">${gameCount}</span><span class="featured-stat-label">Games</span></div>
+    </div>
+    <a href="${linkHref}" class="btn primary featured-tournament-cta">Follow Tournament</a>
+    </div>`;
+    App._loadStandingsPreview(bestGroup[0]);
+  },
+
+  // "Also happening now" — any OTHER currently-active events beyond the
+  // one featured in the hero. Fully synchronous: reuses State.tournaments
+  // and State.teamCounts already cached by loadTournaments(), no extra
+  // queries. Deliberately scoped to status==='active' only — an event
+  // that's merely "pending" isn't "also happening now," so unlike the
+  // featured card there's no pending fallback here.
+  _loadOtherActiveTournaments() {
+    const el = document.getElementById('other-active-tournaments');
+    if (!el) return;
+
+    const active = (State.tournaments || []).filter(t => t.status === 'active');
+    if (active.length < 2) return; // nothing else running concurrently
+
+    const groups = App._groupEventsByName(active);
+    const sorted = App._sortGroupsByRelevance(groups);
+    if (sorted.length < 2) return; // only one active event overall — already featured
+
+    const others = sorted.slice(1); // exclude the one already in the hero
+
+    el.innerHTML = `
+    <div class="section-heading">Also Happening Now</div>
+    <div class="other-active-rail">
+    ${others.map(([, group]) => App._otherActiveCard(group)).join('')}
+    </div>`;
+  },
+
+  _otherActiveCard(group) {
+    const displayName   = group[0].event_name || group[0].name;
+    const categoryCount = group.length;
+    const teamCount     = group.reduce((sum, t) => sum + (State.teamCounts?.[t.id] || 0), 0);
+    const linkHref = group.length === 1
+    ? `bracket.html?id=${group[0].id}`
+    : `index.html#tournament-list`;
+
+    return `<a href="${linkHref}" class="other-active-card">
+    <div class="other-active-name">${escHtml(displayName)}</div>
+    <div class="other-active-meta">
+    ${teamCount} team${teamCount === 1 ? '' : 's'} · ${categoryCount} categor${categoryCount === 1 ? 'y' : 'ies'}
+    </div>
+    </a>`;
+  },
+
+  // Compact standings preview, scoped to whichever tournament is featured
+  // in the hero. Reuses the SAME _computeGroupStandings function the
+  // fixtures screen already uses — no new ranking logic. Round-robin
+  // tournaments get an equivalent table built the same way (whole
+  // tournament treated as one "group"). Elimination tournaments are
+  // skipped: bracket position already communicates standing, and a
+  // classic W/L table isn't a meaningful summary of a single-elim bracket.
+  async _loadStandingsPreview(featuredTournament) {
+    const el = document.getElementById('standings-preview-section');
+    if (!el || !featuredTournament) return;
+    if (featuredTournament.format === 'elimination') return;
+
+    try {
+      const [teams, fixtures] = await Promise.all([
+        pb.collection('teams').getFullList({
+          filter: `tournament="${featuredTournament.id}"`, requestKey: null,
+        }),
+        pb.collection('fixtures').getFullList({
+          filter: `tournament="${featuredTournament.id}"`, requestKey: null,
+        }),
+      ]);
+      if (!teams.length || !fixtures.length) return;
+
+      let rows;
+      if (featuredTournament.format === 'group_stage') {
+        // Preview the first group alphabetically — a full multi-group
+        // breakdown belongs on the tournament page itself, not the homepage.
+        const groupNames = [...new Set(fixtures.filter(f => f.group_name).map(f => f.group_name))].sort();
+        if (!groupNames.length) return;
+        rows = _computeGroupStandings(fixtures, teams, groupNames[0]).slice(0, 5);
+        if (!rows.length) return;
+        el.dataset.groupLabel = groupNames[0];
+      } else {
+        // Round robin — whole tournament is effectively one group.
+        rows = _computeGroupStandings(
+          fixtures.map(f => ({ ...f, group_name: '__all__' })),
+                                      teams,
+                                      '__all__'
+        ).slice(0, 5);
+        if (!rows.length) return;
+      }
+
+      const tournamentLabel = featuredTournament.event_name || featuredTournament.name;
+      const groupLabel = el.dataset.groupLabel ? ` — ${escHtml(el.dataset.groupLabel)}` : '';
+
+      el.innerHTML = `
+      <div class="section-heading">Standings</div>
+      <div class="standings-preview-card">
+      <div class="standings-preview-title">${escHtml(tournamentLabel)}${groupLabel}</div>
+      <div style="overflow-x:auto;">
+      <table class="standings-preview-table">
+      <thead>
+      <tr><th>#</th><th>Team</th><th>W</th><th>L</th><th>+/-</th></tr>
+      </thead>
+      <tbody>
+      ${rows.map((s, i) => `
+        <tr>
+        <td class="standings-preview-rank">${i + 1}</td>
+        <td>${escHtml(s.name)}</td>
+        <td class="standings-preview-num standings-preview-wins">${s.wins}</td>
+        <td class="standings-preview-num">${s.losses}</td>
+        <td class="standings-preview-num" style="color:${s.pointDiff >= 0 ? 'var(--accent)' : 'var(--danger)'}">
+        ${s.pointDiff >= 0 ? '+' : ''}${s.pointDiff}
+        </td>
+        </tr>`).join('')}
+        </tbody>
+        </table>
+        </div>
+        <a href="stats.html" class="standings-preview-link">View full standings →</a>
+        </div>`;
+    } catch (e) {
+      Logger.warn('_loadStandingsPreview failed', { error: e.message });
+    }
   },
 
   // Real scheduled fixtures across every tournament, soonest first. Hidden
@@ -113,36 +366,70 @@ const App = {
     </div>`;
   },
 
-  // Real match data only — the most recently updated fixture that's either
-  // completed or belongs to a currently active tournament. No fabricated
-  // team names or scores; if nothing qualifies yet, the snippet just
-  // doesn't render rather than showing fake data.
+  // Real match data only — the most recently completed fixtures, most
+  // recent first. No fabricated team names or scores; if nothing has
+  // finished yet, the section stays empty rather than showing anything
+  // invented. Kept as a single query serving both the hero's compact
+  // snippet and the fuller "Latest Results" list below it.
   async _loadHeroMatchSnippet() {
-    const el = document.getElementById('hero-match-snippet');
-    if (!el) return;
+    const snippetEl = document.getElementById('hero-match-snippet');
+    const resultsEl = document.getElementById('latest-results-section');
+    if (!snippetEl && !resultsEl) return;
+
     try {
-      const recent = await pb.collection('fixtures').getList(1, 1, {
+      const recent = await pb.collection('fixtures').getList(1, 5, {
         filter: `status="completed"`,
         sort: '-updated',
         expand: 'home_team,away_team,tournament',
         requestKey: null,
       });
-      const fx = recent.items[0];
-      if (!fx) return; // no data yet — snippet stays empty, not fabricated
+      if (!recent.items.length) return; // no data yet — stays empty, not fabricated
 
-      const home = fx.expand?.home_team?.name || 'Home';
-      const away = fx.expand?.away_team?.name || 'Away';
-      const catName = fx.expand?.tournament?.name || '';
+      const [latest, ...rest] = recent.items;
 
-      el.innerHTML = `
-      <span class="pulse-badge pulse-live"><span class="pulse-dot"></span>Final</span>
-      <div class="snippet-teams"><span>${escHtml(home)}</span><span class="snippet-score">${fx.home_score}</span></div>
-      <div class="snippet-teams"><span>${escHtml(away)}</span><span class="snippet-score">${fx.away_score}</span></div>
-      ${catName ? `<div class="snippet-meta">${escHtml(catName)}</div>` : ''}
-      `;
+      if (snippetEl) {
+        const home = latest.expand?.home_team?.name || 'Home';
+        const away = latest.expand?.away_team?.name || 'Away';
+        const catName = latest.expand?.tournament?.name || '';
+        snippetEl.innerHTML = `
+        <span class="pulse-badge pulse-live"><span class="pulse-dot"></span>Final</span>
+        <div class="snippet-teams"><span>${escHtml(home)}</span><span class="snippet-score">${latest.home_score}</span></div>
+        <div class="snippet-teams"><span>${escHtml(away)}</span><span class="snippet-score">${latest.away_score}</span></div>
+        ${catName ? `<div class="snippet-meta">${escHtml(catName)}</div>` : ''}
+        `;
+      }
+
+      if (resultsEl && rest.length) {
+        resultsEl.innerHTML = `
+        <div class="section-heading">Latest Results</div>
+        <div class="results-rail">
+        ${rest.map(App._resultCard).join('')}
+        </div>`;
+      }
     } catch (e) {
       Logger.warn('_loadHeroMatchSnippet failed', { error: e.message });
     }
+  },
+
+  _resultCard(fx) {
+    const home    = fx.expand?.home_team?.name || 'Home';
+    const away    = fx.expand?.away_team?.name || 'Away';
+    const catName = fx.expand?.tournament?.name || '';
+    const wHome   = fx.winner === fx.home_team;
+    const wAway   = fx.winner === fx.away_team;
+
+    return `<div class="result-card">
+    ${catName ? `<div class="result-category">${escHtml(catName)}</div>` : ''}
+    <div class="result-row ${wHome ? 'result-winner' : ''}">
+    <span class="result-team">${escHtml(home)}</span>
+    <span class="score-display-md">${fx.home_score}</span>
+    </div>
+    <div class="result-row ${wAway ? 'result-winner' : ''}">
+    <span class="result-team">${escHtml(away)}</span>
+    <span class="score-display-md">${fx.away_score}</span>
+    </div>
+    <div class="result-final-tag">Final</div>
+    </div>`;
   },
 
   // Real placement=1 data from team_stats, computed automatically when a
@@ -227,6 +514,7 @@ const App = {
 
       State.favourites  = favourites;
       State.teamCounts  = teamCounts;
+      State.tournaments = tournaments;
 
       const filterStatus = App._homeStatusFilter;
       const filteredTournaments = filterStatus === 'all'
@@ -257,29 +545,18 @@ const App = {
         return;
       }
 
-      const events     = {};
-      const standalone = [];
-
-      filteredTournaments.forEach(t => {
-        const ev = (t.event_name || '').trim();
-        if (ev) {
-          if (!events[ev]) events[ev] = [];
-          events[ev].push(t);
-        } else {
-          standalone.push(t);
-        }
-      });
-
       let html = '';
 
-      // Favourites section for guests and admins
+      // Favourites section for guests and admins — unchanged, still shown
+      // above the status buckets regardless of what status those
+      // favourited tournaments happen to be in right now.
       if (Auth.canFavourite() && State.favourites.length) {
         const favIds = new Set(
           State.favourites.map(f =>
           typeof f.tournament === 'object' ? f.tournament.id : f.tournament
           )
         );
-        const favTournaments = filteredTournaments.filter(t => favIds.has(t.id));
+        const favTournaments = tournaments.filter(t => favIds.has(t.id));
         if (favTournaments.length) {
           html += `
           <div style="margin-bottom:10px;">
@@ -292,15 +569,16 @@ const App = {
         }
       }
 
-      Object.keys(events).sort().forEach(eventName => {
-        html += App._renderEventGroup(eventName, events[eventName]);
-      });
+      // Directory, organized by status — same statuses already used
+      // everywhere else in the app (status-badge classes, admin filters).
+      const active    = tournaments.filter(t => t.status === 'active');
+      const pending    = tournaments.filter(t => t.status === 'pending');
+      const completed = tournaments.filter(t => t.status === 'completed');
 
-      if (standalone.length) {
-        html += `<div class="tournament-grid">
-        ${standalone.map(t => App._renderTournamentCard(t)).join('')}
-        </div>`;
-      }
+      html += App._renderDirectorySection('Active', active,
+                                          'There are currently no active tournaments.');
+      html += App._renderDirectorySection('Upcoming', pending);
+      html += App._renderDirectorySection('Completed', completed);
 
       list.innerHTML = html;
 
@@ -309,6 +587,44 @@ const App = {
       UI.showError('home-error', 'home-error-msg', `Could not load tournaments: ${e.message}`);
       list.innerHTML = '<div class="empty-state"><span class="empty-icon">⚠️</span>Couldn\'t load tournaments right now — check your connection and try again.</div>';
     }
+  },
+
+  // Renders one status-bucket of the directory (Active / Upcoming /
+  // Completed), reusing the EXACT same event/standalone grouping logic
+  // loadTournaments() always used — just scoped to a pre-filtered subset.
+  // No new grouping rules, no new card rendering: same _renderEventGroup
+  // and _renderTournamentCard as before.
+  _renderDirectorySection(sectionTitle, sectionTournaments, emptyText) {
+    if (!sectionTournaments.length) {
+      if (!emptyText) return '';
+      return `
+      <div class="section-heading">${escHtml(sectionTitle)}</div>
+      <div class="directory-empty">${escHtml(emptyText)}</div>`;
+    }
+
+    const events     = {};
+    const standalone = [];
+    sectionTournaments.forEach(t => {
+      const ev = (t.event_name || '').trim();
+      if (ev) {
+        if (!events[ev]) events[ev] = [];
+        events[ev].push(t);
+      } else {
+        standalone.push(t);
+      }
+    });
+
+    let inner = '';
+    Object.keys(events).sort().forEach(eventName => {
+      inner += App._renderEventGroup(eventName, events[eventName]);
+    });
+    if (standalone.length) {
+      inner += `<div class="tournament-grid">
+      ${standalone.map(t => App._renderTournamentCard(t)).join('')}
+      </div>`;
+    }
+
+    return `<div class="section-heading">${escHtml(sectionTitle)}</div>${inner}`;
   },
 
   _renderEventGroup(eventName, categories) {
@@ -1761,18 +2077,19 @@ const App = {
       const tableRows = rows.map((s, i) => {
         const adv = i < 2;
         return `<tr style="${adv ? 'background:var(--bg-success)' : ''}">
-        <td style="padding:6px 8px;font-size:12px;font-weight:500;
-        color:${adv ? 'var(--accent)' : 'var(--text-secondary)'}">
+        <td style="padding:8px;font-size:13px;font-weight:800;
+        color:${adv ? 'var(--accent)' : 'var(--text-tertiary)'}">
         ${i + 1}${adv ? ' ✓' : ''}
         </td>
-        <td style="padding:6px 8px;font-size:13px;font-weight:${adv ? '600' : '400'}">
+        <td style="padding:8px;font-size:14px;font-weight:${adv ? '700' : '500'};
+        color:var(--text-primary)">
         ${escHtml(s.name)}
         </td>
-        <td style="padding:6px 8px;font-size:12px;text-align:center">${s.played}</td>
-        <td style="padding:6px 8px;font-size:12px;text-align:center;font-weight:600;
+        <td style="padding:8px;font-size:12px;text-align:center;color:var(--text-tertiary)">${s.played}</td>
+        <td style="padding:8px;font-size:15px;text-align:center;font-weight:800;
         color:var(--accent)">${s.wins}</td>
-        <td style="padding:6px 8px;font-size:12px;text-align:center">${s.losses}</td>
-        <td style="padding:6px 8px;font-size:12px;text-align:center;
+        <td style="padding:8px;font-size:12px;text-align:center;color:var(--text-secondary)">${s.losses}</td>
+        <td style="padding:8px;font-size:13px;text-align:center;font-weight:700;
         color:${s.pointDiff >= 0 ? 'var(--accent)' : 'var(--danger)'}">
         ${s.pointDiff >= 0 ? '+' : ''}${s.pointDiff}
         </td>
@@ -1908,11 +2225,12 @@ const App = {
     .nba-team.tbd{opacity:.6}
     .nba-divider{height:1px;background:var(--border-light)}
     .nba-seed{font-size:10px;color:var(--text-tertiary);min-width:14px;text-align:right;flex-shrink:0}
-    .nba-name{flex:1;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text-primary)}
-    .nba-team.winner .nba-name{color:var(--accent);font-weight:600}
+    .nba-name{flex:1;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text-primary)}
+    .nba-team.winner .nba-name{color:var(--accent);font-weight:800}
     .nba-team.tbd .nba-name{color:var(--text-tertiary);font-style:italic;font-weight:400}
-    .nba-score{font-size:12px;font-weight:700;color:var(--text-tertiary);flex-shrink:0;margin-left:4px}
+    .nba-score{font-size:14px;font-weight:800;color:var(--text-tertiary);flex-shrink:0;margin-left:4px}
     .nba-team.winner .nba-score{color:var(--accent)}
+    .nba-round-label{font-weight:800;letter-spacing:.08em;}
     .nba-connectors{position:absolute;top:0;left:0;pointer-events:none}
     </style>
     <div class="nba-bracket-wrap">
@@ -1929,7 +2247,7 @@ const App = {
     const wAway    = isDone && fixture.winner === fixture.away_team;
 
     const scoreHtml = isDone
-    ? `<span class="match-score">${fixture.home_score} – ${fixture.away_score}</span>`
+    ? `<span class="match-pill match-pill-final">Final</span><span class="match-score">${fixture.home_score} – ${fixture.away_score}</span>`
     : canEnter ? `<span class="match-action">Tap to enter</span>` : '';
 
     const editBtn = isDone && Auth.canEnterScores(fixture.tournament)

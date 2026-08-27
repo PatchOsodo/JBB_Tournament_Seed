@@ -1,7 +1,7 @@
 /*
  * =============================================================================
  * BASKETBALL TOURNAMENT MANAGER — styles.css
- * Version : 3.0.2
+ * Version : 3.1.0
  *
  * TABLE OF CONTENTS
  * -----------------
@@ -1806,6 +1806,7 @@ select.tournament-name-input {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
   gap: 12px;
 }
 .team-card:hover {
@@ -2404,4 +2405,482 @@ padding-bottom         : 2px; /* room so the scrollbar-less drag area doesn't cl
 #st-nav a, #st-nav span,
 #bracket-nav a, #bracket-nav span {
 flex-shrink: 0;
+}
+
+/* =============================================================================
+ *  PUBLIC REFINEMENT — PHASE 1 FOUNDATION
+ *  Section header treatment + admin-toolbar de-emphasis + score typography
+ *  scale. Score classes are unused until Phase 3+ (Live/Upcoming/Results)
+ *  but defined now so later phases share one scale.
+ *  ============================================================================= */
+
+.section-heading-row {
+  display         : flex;
+  align-items     : center;
+  justify-content : space-between;
+  margin-bottom   : 0.75rem;
+  flex-wrap       : wrap;
+  gap             : 8px;
+}
+
+/* Visually demotes admin-only controls (New tournament / Organise events)
+ *  so they read as a toolbar, not a primary hero action — matches the
+ *  audit's "administrative language should not dominate the public
+ *  surface" principle. Only ever visible to admins (JS-gated). */
+.admin-toolbar {
+  display       : flex;
+  flex-wrap     : wrap;
+  gap           : 8px;
+  align-items   : center;
+  padding       : 4px 6px;
+  background    : var(--bg-secondary);
+  border        : 0.5px solid var(--border-light);
+  border-radius : var(--radius-md);
+}
+
+/* Sports-page section header — bold label + trailing rule. Used by
+ *  later phases (Live Now, Up Next, Recent Results, Standings preview). */
+.section-heading {
+  font-size      : 13px;
+  font-weight    : 700;
+  letter-spacing : 0.06em;
+  text-transform : uppercase;
+  color          : var(--text-secondary);
+  margin-bottom  : 0.75rem;
+  display        : flex;
+  align-items    : center;
+  gap            : 8px;
+}
+.section-heading::after {
+  content    : '';
+  flex       : 1;
+  height     : 1px;
+  background : var(--border-light);
+}
+
+/* Score typography scale — large numbers read as scoreboard data, not
+ *  table cells. Reserved for Phase 3 (Live/Upcoming) and Phase 8–9
+ *  (Results/Standings) card work. */
+.score-display-lg {
+  font-size      : 32px;
+  font-weight    : 800;
+  color          : var(--accent);
+  line-height    : 1;
+  letter-spacing : -0.02em;
+}
+.score-display-md {
+  font-size   : 22px;
+  font-weight : 700;
+  color       : var(--accent);
+  line-height : 1;
+}
+
+/* =============================================================================
+ *  PUBLIC REFINEMENT — PHASE 2: FEATURED TOURNAMENT CARD
+ *  ============================================================================= */
+.featured-tournament-card {
+  background    : linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%);
+  border-radius : var(--radius-xl);
+  padding       : 1.5rem;
+  margin-bottom : 1.5rem;
+  color         : #fff;
+  text-align    : center;
+}
+.featured-tournament-eyebrow {
+  font-size      : 11px;
+  font-weight    : 700;
+  text-transform : uppercase;
+  letter-spacing : 0.1em;
+  opacity        : 0.75;
+  margin-bottom  : 6px;
+}
+.featured-tournament-name {
+  font-size     : 22px;
+  font-weight   : 800;
+  margin-bottom : 1rem;
+  line-height   : 1.25;
+}
+.featured-tournament-stats {
+  display         : flex;
+  justify-content : center;
+  gap             : 28px;
+  margin-bottom   : 1.25rem;
+  flex-wrap       : wrap;
+}
+.featured-tournament-stats > div {
+  display        : flex;
+  flex-direction : column;
+  align-items    : center;
+}
+.featured-tournament-stats .score-display-md { color: #fff; }
+.featured-stat-label {
+  font-size      : 10px;
+  text-transform : uppercase;
+  letter-spacing : 0.06em;
+  opacity        : 0.75;
+  margin-top     : 2px;
+}
+.featured-tournament-cta {
+  background  : #fff;
+  color       : var(--accent-dark);
+  border      : none;
+  font-weight : 700;
+}
+.featured-tournament-cta:hover { opacity: 0.9; }
+
+@media (max-width: 480px) {
+  .featured-tournament-card  { padding: 1.25rem 1rem; }
+  .featured-tournament-stats { gap: 18px; }
+}
+
+/* =============================================================================
+ *  PUBLIC REFINEMENT — PHASE 3: UP NEXT RAIL
+ *  ============================================================================= */
+.upcoming-games-rail {
+  display                : flex;
+  gap                     : 12px;
+  overflow-x              : auto;
+  padding-bottom          : 4px;
+  margin-bottom           : 1.5rem;
+  scroll-snap-type        : x proximity;
+  -webkit-overflow-scrolling: touch;
+}
+.upcoming-games-rail::-webkit-scrollbar { height: 5px; }
+.upcoming-games-rail::-webkit-scrollbar-thumb {
+  background    : var(--border-mid);
+  border-radius : 99px;
+}
+
+.upcoming-game-card {
+  flex          : 0 0 auto;
+  scroll-snap-align: start;
+  width         : 220px;
+  background    : var(--bg-primary);
+  border        : 0.5px solid var(--border-light);
+  border-radius : var(--radius-lg);
+  padding       : 0.9rem 1rem;
+  transition    : border-color 0.15s, box-shadow 0.15s;
+}
+.upcoming-game-card:hover {
+  border-color : var(--secondary, #d4a017);
+  box-shadow   : 0 4px 14px rgba(10,34,16,0.10);
+}
+
+.upcoming-game-category {
+  font-size      : 10px;
+  font-weight    : 700;
+  text-transform : uppercase;
+  letter-spacing : 0.06em;
+  color          : var(--accent);
+  margin-bottom  : 8px;
+}
+.upcoming-game-teams {
+  display        : flex;
+  flex-direction : column;
+  gap            : 3px;
+  font-size      : 14px;
+  font-weight    : 600;
+  color          : var(--text-primary);
+  margin-bottom  : 8px;
+}
+.upcoming-game-vs {
+  font-size   : 10px;
+  font-weight : 500;
+  color       : var(--text-tertiary);
+  text-transform: uppercase;
+}
+.upcoming-game-meta {
+  font-size : 11px;
+  color     : var(--text-secondary);
+}
+.upcoming-game-meta-muted { color: var(--text-tertiary); font-style: italic; }
+.upcoming-game-event {
+  font-size    : 10px;
+  color        : var(--text-tertiary);
+  margin-top   : 4px;
+  padding-top  : 6px;
+  border-top   : 0.5px solid var(--border-light);
+}
+
+@media (max-width: 480px) {
+  .upcoming-game-card { width: 190px; }
+}
+
+/* =============================================================================
+ *  PUBLIC REFINEMENT — PHASE 4: OTHER ACTIVE TOURNAMENTS STRIP
+ *  ============================================================================= */
+.other-active-rail {
+  display                    : flex;
+  gap                        : 10px;
+  overflow-x                 : auto;
+  padding-bottom             : 4px;
+  margin-bottom              : 1.5rem;
+  scroll-snap-type           : x proximity;
+  -webkit-overflow-scrolling : touch;
+}
+.other-active-rail::-webkit-scrollbar { height: 5px; }
+.other-active-rail::-webkit-scrollbar-thumb {
+  background    : var(--border-mid);
+  border-radius : 99px;
+}
+
+.other-active-card {
+  flex             : 0 0 auto;
+  scroll-snap-align: start;
+  width            : 200px;
+  background       : var(--bg-primary);
+  border           : 0.5px solid var(--border-light);
+  border-radius    : var(--radius-lg);
+  padding          : 0.85rem 1rem;
+  text-decoration  : none;
+  display          : block;
+  transition       : border-color 0.15s, box-shadow 0.15s;
+}
+.other-active-card:hover {
+  border-color : var(--accent);
+  box-shadow   : 0 4px 14px rgba(10,34,16,0.10);
+}
+.other-active-name {
+  font-size     : 13px;
+  font-weight   : 700;
+  color         : var(--text-primary);
+  margin-bottom : 4px;
+  line-height   : 1.3;
+}
+.other-active-meta {
+  font-size : 11px;
+  color     : var(--text-tertiary);
+}
+
+@media (max-width: 480px) {
+  .other-active-card { width: 170px; }
+}
+/* =============================================================================
+ *  PUBLIC REFINEMENT — PHASE 5: LATEST RESULTS + STANDINGS PREVIEW
+ *  ============================================================================= */
+.results-rail {
+  display                    : flex;
+  gap                        : 12px;
+  overflow-x                 : auto;
+  padding-bottom             : 4px;
+  margin-bottom              : 1.5rem;
+  scroll-snap-type           : x proximity;
+  -webkit-overflow-scrolling : touch;
+}
+.results-rail::-webkit-scrollbar { height: 5px; }
+.results-rail::-webkit-scrollbar-thumb {
+  background    : var(--border-mid);
+  border-radius : 99px;
+}
+
+.result-card {
+  flex             : 0 0 auto;
+  scroll-snap-align: start;
+  width            : 200px;
+  background       : var(--bg-primary);
+  border           : 0.5px solid var(--border-light);
+  border-radius    : var(--radius-lg);
+  padding          : 0.85rem 1rem;
+}
+.result-category {
+  font-size      : 10px;
+  font-weight    : 700;
+  text-transform : uppercase;
+  letter-spacing : 0.06em;
+  color          : var(--text-tertiary);
+  margin-bottom  : 8px;
+}
+.result-row {
+  display         : flex;
+  align-items     : center;
+  justify-content : space-between;
+  padding         : 3px 0;
+}
+.result-team {
+  font-size   : 13px;
+  font-weight : 500;
+  color       : var(--text-secondary);
+}
+.result-winner .result-team {
+  font-weight : 700;
+  color       : var(--text-primary);
+}
+.result-winner .score-display-md { color: var(--accent); }
+.result-card .score-display-md:not(.result-winner .score-display-md) { color: var(--text-tertiary); }
+.result-final-tag {
+  font-size      : 10px;
+  font-weight    : 600;
+  text-transform : uppercase;
+  letter-spacing : 0.05em;
+  color          : var(--text-tertiary);
+  margin-top     : 6px;
+  padding-top    : 6px;
+  border-top     : 0.5px solid var(--border-light);
+}
+
+.standings-preview-card {
+  background    : var(--bg-primary);
+  border        : 0.5px solid var(--border-light);
+  border-radius : var(--radius-lg);
+  padding       : 1rem 1.1rem;
+  margin-bottom : 1.5rem;
+}
+.standings-preview-title {
+  font-size     : 13px;
+  font-weight   : 700;
+  color         : var(--text-primary);
+  margin-bottom : 10px;
+}
+.standings-preview-table {
+  width           : 100%;
+  border-collapse : collapse;
+  font-size       : 12px;
+  margin-bottom   : 10px;
+}
+.standings-preview-table th {
+  text-align     : left;
+  font-size      : 10px;
+  font-weight    : 600;
+  color          : var(--text-tertiary);
+  text-transform : uppercase;
+  letter-spacing : 0.04em;
+  padding        : 4px 6px;
+  border-bottom  : 0.5px solid var(--border-light);
+}
+.standings-preview-table td {
+  padding    : 6px;
+  border-bottom: 0.5px solid var(--border-light);
+}
+.standings-preview-rank { color: var(--text-tertiary); font-weight: 600; width: 20px; }
+.standings-preview-num  { text-align: center; }
+.standings-preview-wins { color: var(--accent); font-weight: 700; }
+.standings-preview-link {
+  font-size       : 12px;
+  font-weight     : 600;
+  color           : var(--accent);
+  text-decoration : none;
+}
+.standings-preview-link:hover { text-decoration: underline; }
+
+@media (max-width: 480px) {
+  .result-card { width: 175px; }
+}
+/* =============================================================================
+ P UBLIC REFINEMENT — PHASE 6: TOURNAMENT DIRE*CTORY (Active/Upcoming/Completed)
+ ============================================================================= */
+.directory-empty {
+  font-size     : 13px;
+  color         : var(--text-tertiary);
+  padding       : 0.75rem 0 1.5rem;
+}
+
+/* Give each status bucket's heading breathing room from the section
+ a bove it — .section-heading already has its *own bottom margin, this
+ just adds top spacing between consecutive buckets. */
+.section-heading { margin-top: 1.5rem; }
+.section-heading:first-child { margin-top: 0; }
+
+/* =============================================================================
+ *  PUBLIC REFINEMENT — PHASE 7: TOURNAMENT HUB HEADER
+ *  ============================================================================= */
+
+/* Stronger hub-page identity for the tournament detail screen */
+.schedule-title {
+  font-size   : 22px;
+  font-weight : 800;
+  color       : var(--text-primary);
+}
+.schedule-meta {
+  font-size   : 13px;
+  color       : var(--text-tertiary);
+  margin-top  : 3px;
+}
+
+/* Right-side header column: status badge → public actions → admin toolbar,
+ *  stacked and right-aligned on desktop. */
+.tournament-hub-actions {
+  display        : flex;
+  flex-direction : column;
+  align-items    : flex-end;
+  gap            : 8px;
+}
+.tournament-hub-actions .btn-row { justify-content: flex-end; }
+
+@media (max-width: 600px) {
+  .tournament-hub-actions        { align-items: flex-start; width: 100%; }
+  .tournament-hub-actions .btn-row { justify-content: flex-start; }
+}
+
+/* Scoreboard-style stat numbers instead of plain admin-record digits */
+.stat-val {
+  font-size   : 26px;
+  font-weight : 800;
+  color       : var(--accent);
+}
+.stat-lbl {
+  font-size      : 10px;
+  font-weight    : 600;
+  text-transform : uppercase;
+  letter-spacing : 0.05em;
+}
+
+/* =============================================================================
+ *  PUBLIC REFINEMENT — PHASE 8: FIXTURES & RESULTS SCOREBOARD TREATMENT
+ *  ============================================================================= */
+
+/* Score now reads as a scoreboard number, not a table cell */
+.match-score {
+  font-size      : 18px;
+  font-weight    : 800;
+  color          : var(--accent);
+  white-space    : nowrap;
+  min-width      : 60px;
+  text-align     : center;
+  letter-spacing : -0.01em;
+}
+
+/* Team names slightly stronger for readability at a glance */
+.team-a, .team-b {
+  font-size   : 14px;
+  font-weight : 600;
+}
+
+/* Completed matches get a quiet accent edge — distinguishes "result" rows
+ *  from "upcoming" rows in a scannable list without changing layout. */
+.match-card.completed {
+  border-left : 3px solid var(--accent);
+  padding-left: calc(1rem - 3px);
+}
+
+@media (max-width: 600px) {
+  .match-score { font-size: 16px; min-width: 50px; }
+  .team-a, .team-b { font-size: 13px; }
+}
+
+/* =============================================================================
+ *  PUBLIC REFINEMENT — PHASE 11: MOBILE OVERFLOW SAFETY
+ *  ============================================================================= */
+
+/* Team registry row (teams.html) — extracted from inline styles so a real
+ *  wrap rule can apply; media queries can't override inline style attributes. */
+.team-registry-row {
+  display         : flex;
+  align-items     : center;
+  justify-content : space-between;
+  flex-wrap       : wrap;
+  gap             : 10px;
+  padding         : .7rem 1rem;
+  border-bottom   : .5px solid var(--border-light);
+  cursor          : pointer;
+  transition      : background .12s;
+}
+.team-registry-row:hover { background: var(--bg-secondary); }
+.team-registry-row-stats {
+  display     : flex;
+  gap         : 18px;
+  align-items : center;
+  flex-shrink : 0;
+}
+@media (max-width: 480px) {
+  .team-registry-row-stats { gap: 12px; }
 }

@@ -244,41 +244,34 @@ const Teams = {
       const roster      = Teams._scopedTournamentId ? Teams._scopedRosterInfo[t.id] : null;
 
       return `
-        <div onclick="Teams.openProfile('${t.id}')"
-             style="display:flex; align-items:center; justify-content:space-between;
-              padding:.7rem 1rem; border-bottom:.5px solid var(--border-light);
-              cursor:pointer; transition:background .12s;"
-       onmouseover="this.style.background='var(--bg-secondary)'"
-       onmouseout="this.style.background='transparent'">
-          <div>
-            <div style="font-size:13px;font-weight:500;color:var(--text-primary);
-                        display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-              ${roster?.seed ? `<span style="font-size:10px;color:var(--text-tertiary);min-width:16px;">#${roster.seed}</span>` : ''}
-              ${_esc(t.name)}
-              ${t.club_name && t.club_name !== t.name ? `<span style="font-size:10px;color:var(--text-tertiary);">${_esc(t.club_name)}</span>` : ''}
-              ${t.short_name ? `<span style="font-size:10px;color:var(--text-tertiary);background:var(--bg-secondary);padding:1px 6px;border-radius:4px;border:.5px solid var(--border-light);">${_esc(t.short_name)}</span>` : ''}
-              ${roster?.group_name ? `<span class="cat-badge">Group ${_esc(roster.group_name)}</span>` : ''}
-              ${isInactive ? `<span style="font-size:10px;color:var(--text-tertiary);">inactive</span>` : ''}
-            </div>
-            <div style="margin-top:4px;display:flex;gap:5px;flex-wrap:wrap;">
-              ${catLabels.length
-                ? catLabels.map(c => `<span class="cat-badge">${_esc(c)}</span>`).join('')
-                : `<span style="font-size:11px;color:var(--text-tertiary);font-style:italic;">Not in any category yet</span>`}
-            </div>
-            ${t.home_court ? `<div style="font-size:11px;color:var(--text-tertiary);margin-top:4px;">🏟 ${_esc(t.home_court)}</div>` : ''}
-          </div>
-          <div style="display:flex;gap:16px;flex-shrink:0;align-items:center;">
-            ${totalPlayed ? `
-              <div style="text-align:center;">
-                <div style="font-size:14px;font-weight:700;color:var(--accent);">${totalWins}</div>
-                <div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;">Wins</div>
-              </div>
-              <div style="text-align:center;">
-                <div style="font-size:14px;font-weight:700;color:var(--text-secondary);">${totalPlayed}</div>
-                <div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;">Tournaments</div>
-              </div>` : `<span style="font-size:11px;color:var(--text-tertiary);">No data yet</span>`}
-            <span style="font-size:16px;color:var(--text-tertiary);">›</span>
-          </div>
+        <div class="team-registry-row" onclick="Teams.openProfile('${t.id}')">
+       <div>
+       <div style="font-size:15px;font-weight:700;color:var(--text-primary);
+       display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+       ${_esc(t.name)}
+       ${t.club_name && t.club_name !== t.name ? `<span style="font-size:11px;font-weight:400;color:var(--text-tertiary);">${_esc(t.club_name)}</span>` : ''}
+       ${t.short_name ? `<span style="font-size:10px;font-weight:700;color:var(--text-secondary);background:var(--bg-secondary);padding:2px 7px;border-radius:20px;border:.5px solid var(--border-light);">${_esc(t.short_name)}</span>` : ''}
+       ${isInactive ? `<span style="font-size:10px;font-weight:400;color:var(--text-tertiary);">inactive</span>` : ''}
+       </div>
+       <div style="margin-top:5px;display:flex;gap:5px;flex-wrap:wrap;">
+       ${catLabels.length
+         ? catLabels.map(c => `<span class="cat-badge">${_esc(c)}</span>`).join('')
+         : `<span style="font-size:11px;color:var(--text-tertiary);font-style:italic;">Not in any category yet</span>`}
+         </div>
+         ${t.home_court ? `<div style="font-size:11px;color:var(--text-tertiary);margin-top:5px;">🏟 ${_esc(t.home_court)}</div>` : ''}
+         </div>
+        <div class="team-registry-row-stats">
+         ${totalPlayed ? `
+           <div style="text-align:center;">
+           <div class="score-display-md">${totalWins}</div>
+           <div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;">Wins</div>
+           </div>
+           <div style="text-align:center;">
+           <div style="font-size:18px;font-weight:700;color:var(--text-secondary);">${totalPlayed}</div>
+           <div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;">Tournaments</div>
+           </div>` : `<span style="font-size:11px;color:var(--text-tertiary);">No data yet</span>`}
+           <span style="font-size:18px;color:var(--text-tertiary);">›</span>
+           </div>
         </div>`;
     }).join('');
 
@@ -585,18 +578,18 @@ const Teams = {
         <!-- Career stats -->
         ${stats.length ? `
           <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:1rem;">
-            ${[
-              [stats.length, 'Tournaments'],
-              [winPct + '%', 'Win rate'],
-              [(pd >= 0 ? '+' : '') + pd, 'Point diff', pd >= 0 ? 'var(--accent)' : 'var(--danger)'],
-              [best ? _placementLabel(best) : '—', 'Best finish'],
-            ].map(([val, lbl, color]) => `
-              <div style="background:var(--bg-secondary);border-radius:var(--radius-md);
-                          padding:10px 8px;text-align:center;">
-                <div style="font-size:18px;font-weight:700;color:${color||'var(--accent)'};">${val}</div>
-                <div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;
-                            letter-spacing:.05em;margin-top:2px;">${lbl}</div>
-              </div>`).join('')}
+          ${[
+            [t.tournaments, 'Tournaments'],
+            [winPct + '%', 'Win rate'],
+            [(pd >= 0 ? '+' : '') + pd, 'Point diff', pd >= 0 ? 'var(--accent)' : 'var(--danger)'],
+            [bestPlc ? placementLabel(bestPlc) : '—', 'Best finish'],
+          ].map(([val, lbl, color]) => `
+          <div style="background:var(--bg-secondary);border-radius:var(--radius-md);
+          padding:12px 8px;text-align:center;border:0.5px solid var(--border-light);">
+          <div style="font-size:24px;font-weight:800;letter-spacing:-0.01em;color:${color||'var(--accent)'};">${val}</div>
+          <div style="font-size:10px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;
+          letter-spacing:.05em;margin-top:3px;">${lbl}</div>
+          </div>`).join('')}
           </div>
 
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:1rem;">
