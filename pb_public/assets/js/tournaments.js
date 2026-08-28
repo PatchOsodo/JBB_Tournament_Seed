@@ -21,20 +21,23 @@ const TournamentsPage = {
 
   groups : [],   // one entry per event (or per standalone tournament)
   filter : 'all',
+  favourites : [],
 
   async init() {
     await Shell.injectNav();
     Shell.renderAuthBar(pb);
 
     try {
-      const [tournaments, teamRows] = await Promise.all([
+      const [tournaments, teamRows, favourites] = await Promise.all([
         pb.collection('tournaments').getFullList({ sort: '-created', requestKey: null }),
         pb.collection('teams').getFullList({ fields: 'id,tournament', requestKey: null }),
+        TournamentsPage._loadFavourites(),
       ]);
 
       const teamCounts = {};
       teamRows.forEach(r => { teamCounts[r.tournament] = (teamCounts[r.tournament] || 0) + 1; });
 
+      TournamentsPage.favourites = favourites;
       TournamentsPage.groups = Events.buildSummarizedGroups(tournaments, teamCounts);
       TournamentsPage.render();
     } catch (e) {
@@ -78,6 +81,42 @@ const TournamentsPage = {
     grid.innerHTML = `<div class="tournament-grid">${filtered.map(TournamentsPage._card).join('')}</div>`;
   },
 
+  // Local minimal auth check — this page has no auth.js dependency by
+  // design (self-contained, same pattern as the rest of these public
+  // pages), so just check pb.authStore directly.
+  async _loadFavourites() {
+    if (!pb.authStore.isValid) return [];
+    try {
+      return await pb.collection('favourites').getFullList({
+        filter: `user="${pb.authStore.model.id}"`, requestKey: null,
+      });
+    } catch (e) {
+      console.warn('TournamentsPage._loadFavourites failed', e.message);
+      return [];
+    }
+  },
+
+  async toggleEventFollow(eventName, existingFavId) {
+    if (!pb.authStore.isValid) {
+      alert('Sign in to follow tournaments.');
+      return;
+    }
+    try {
+      if (existingFavId) {
+        await pb.collection('favourites').delete(existingFavId);
+      } else {
+        await pb.collection('favourites').create({
+          user: pb.authStore.model.id, tournament: null, event_name: eventName,
+        });
+      }
+      TournamentsPage.favourites = await TournamentsPage._loadFavourites();
+      TournamentsPage.render();
+    } catch (e) {
+      console.error('toggleEventFollow failed', e);
+    }
+  },
+
+
   _statusLabel(status) {
     return { pending: 'Upcoming', active: 'Ongoing', completed: 'Complete' }[status] || status;
   },
@@ -102,6 +141,15 @@ const TournamentsPage = {
       ? `tournament.html?event=${encodeURIComponent(g.displayName)}`
       : `tournament.html?id=${g.linkId}`;
 
+    const existingFav = TournamentsPage.favourites.find(f => f.event_name === g.displayName) || null;
+    const followBtn = `
+      <button class="btn sm ghost tournament-card-follow"
+              onclick="event.preventDefault();TournamentsPage.toggleEventFollow('${escHtml(g.displayName).replace(/'/g, "\\'")}', ${existingFav ? `'${existingFav.id}'` : 'null'})"
+              title="${existingFav ? 'Unfollow' : 'Follow this tournament'}">
+        ${existingFav ? '★ Following' : '☆ Follow'}
+      </button>`;
+
+
     return `<div class="tournament-card">
       ${bannerHtml}
       <div class="tournament-card-body">
@@ -117,6 +165,7 @@ const TournamentsPage = {
           <a class="btn sm primary" href="${href}" style="width:100%;justify-content:center;">
             View Tournament
           </a>
+          ${followBtn}
         </div>
       </div>
     </div>`;

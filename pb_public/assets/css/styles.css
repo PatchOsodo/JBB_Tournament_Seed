@@ -2941,3 +2941,12 @@ flex-shrink: 0;
 @media (max-width: 600px) {
   .tourn-banner-wrap { height: 120px; }
 }
+/* =============================================================================
+ *  PHASE 7 — FOLLOW TOURNAMENT / FOLLOW CATEGORY
+ *  ============================================================================= */
+.tournament-card-follow {
+  flex-shrink : 0;
+}
+#tourn-follow-btn {
+white-space : nowrap;
+}

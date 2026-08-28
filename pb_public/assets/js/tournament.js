@@ -41,6 +41,7 @@ const TournamentPage = {
 
   // Event-mode state
   eventSummary : null,
+  favourites   : [],
 
   async init() {
     await Shell.injectNav();
@@ -49,6 +50,8 @@ const TournamentPage = {
     const params    = new URLSearchParams(window.location.search);
     const id        = params.get('id');
     const eventName = params.get('event');
+
+    TournamentPage.favourites = await TournamentPage._loadFavourites();
 
     if (eventName) {
       await TournamentPage._initEventMode(eventName);
@@ -76,6 +79,7 @@ const TournamentPage = {
       TournamentPage.fixtures   = fixtures;
 
       TournamentPage._renderHeader();
+      TournamentPage._renderFollowControl({ mode: 'category', tournamentId: id });
       TournamentPage._renderNav(id);
       TournamentPage._renderStats(teamsCount.totalItems);
       TournamentPage._renderRecentResults();
@@ -231,6 +235,7 @@ const TournamentPage = {
       TournamentPage.eventSummary = summary;
 
       TournamentPage._renderEventHeader(summary);
+      TournamentPage._renderFollowControl({ mode: 'event', eventName: summary.displayName });
       TournamentPage._renderEventNav(summary);
       TournamentPage._renderEventStats(summary, fixtures);
       TournamentPage._renderEventUpcoming(fixtures);
@@ -444,6 +449,70 @@ const TournamentPage = {
     }).join('')}
     </div>`;
   },
+
+  async _loadFavourites() {
+    if (!pb.authStore.isValid) return [];
+    try {
+      return await pb.collection('favourites').getFullList({
+        filter: `user="${pb.authStore.model.id}"`, requestKey: null,
+      });
+    } catch (e) {
+      console.warn('TournamentPage._loadFavourites failed', e.message);
+      return [];
+    }
+  },
+
+  // Renders a labeled "Follow Tournament" / "Follow Category" button next
+  // to the status badge. `opts` is either { mode:'category', tournamentId }
+  // or { mode:'event', eventName }. Guests get a sign-in prompt instead of
+  // silently failing.
+  _renderFollowControl(opts) {
+    const headerRight = document.querySelector('.app-header-right');
+    if (!headerRight) return;
+
+    document.getElementById('tourn-follow-btn')?.remove();
+
+    const isEvent = opts.mode === 'event';
+    const existing = isEvent
+      ? TournamentPage.favourites.find(f => f.event_name === opts.eventName)
+      : TournamentPage.favourites.find(f => {
+          const tid = typeof f.tournament === 'object' ? f.tournament?.id : f.tournament;
+          return tid === opts.tournamentId;
+        });
+
+    const label = isEvent ? 'Follow Tournament' : 'Follow Category';
+    const btn = document.createElement('button');
+    btn.id = 'tourn-follow-btn';
+    btn.className = 'btn sm ghost';
+    btn.textContent = existing ? '★ Following' : `☆ ${label}`;
+    btn.onclick = () => TournamentPage._toggleFollow(opts, existing);
+    headerRight.appendChild(btn);
+  },
+
+  async _toggleFollow(opts, existing) {
+    if (!pb.authStore.isValid) {
+      alert('Sign in to follow tournaments and categories.');
+      return;
+    }
+    try {
+      if (existing) {
+        await pb.collection('favourites').delete(existing.id);
+      } else if (opts.mode === 'event') {
+        await pb.collection('favourites').create({
+          user: pb.authStore.model.id, tournament: null, event_name: opts.eventName,
+        });
+      } else {
+        await pb.collection('favourites').create({
+          user: pb.authStore.model.id, tournament: opts.tournamentId, event_name: null,
+        });
+      }
+      TournamentPage.favourites = await TournamentPage._loadFavourites();
+      TournamentPage._renderFollowControl(opts);
+    } catch (e) {
+      console.error('TournamentPage._toggleFollow failed', e);
+    }
+  },
+
 
   _showError(msg) {
     document.getElementById('tourn-title').textContent = 'Tournament';

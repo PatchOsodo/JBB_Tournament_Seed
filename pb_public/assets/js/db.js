@@ -427,10 +427,12 @@ const DB = {
     }
   },
 
+  // Follow ONE category (a single `tournaments` row).
   async addFavourite(tournamentId) {
     return pb.collection('favourites').create({
       user      : Auth.user().id,
-                                              tournament: tournamentId,
+      tournament: tournamentId,
+      event_name: null,
     });
   },
 
@@ -438,6 +440,29 @@ const DB = {
     return pb.collection('favourites').delete(favouriteId);
   },
 
+  // Follow a whole TOURNAMENT (an event_name grouping across categories).
+  async addEventFavourite(eventName) {
+    return pb.collection('favourites').create({
+      user      : Auth.user().id,
+      tournament: null,
+      event_name: eventName,
+    });
+  },
+
+  // A user's favourites list mixes category-follows (favourite.tournament
+  // set) and event-follows (favourite.event_name set) — this just finds
+  // whichever one matches, if any, so UI code doesn't need to know the
+  // storage shape.
+  findCategoryFavourite(favourites, tournamentId) {
+    return (favourites || []).find(f => {
+      const tid = typeof f.tournament === 'object' ? f.tournament?.id : f.tournament;
+      return tid === tournamentId;
+    }) || null;
+  },
+
+  findEventFavourite(favourites, eventName) {
+    return (favourites || []).find(f => f.event_name === eventName) || null;
+  },
   /* ── BRACKET ADVANCEMENT ─────────────────────────────────────────────── */
 
   async advanceWinnerElimination(tournamentId, currentRound, currentMatchNumber, winnerTeamId) {
