@@ -2950,3 +2950,40 @@ flex-shrink: 0;
 #tourn-follow-btn {
 white-space : nowrap;
 }
+/* =============================================================================
+ *  PHASE 8 — RESPONSIVE REFINEMENT (event overview + follow controls)
+ *  ============================================================================= */
+
+/* Tournament page header-right needs to wrap its own contents (status badge
+ *  + follow button) independently — the existing global .app-header-right
+ *  rule only handles the app-header as a whole stacking on mobile. */
+.app-header-right {
+  flex-wrap : wrap;
+  gap       : 8px;
+}
+
+/* Follow button on directory cards — allow the actions row to wrap instead
+ *  of overflowing when both buttons can't fit on one line. */
+.tournament-card-actions {
+  flex-wrap : wrap;
+}
+.tournament-card-actions .btn.primary {
+  flex : 1 1 auto;
+  min-width : 140px;
+}
+.tournament-card-follow {
+  flex : 0 0 auto;
+}
+
+/* Standings preview tables inside the event overview — horizontal scroll
+ *  safety net at very narrow widths, matching the pattern already used on
+ *  standings.html's per-group tables. */
+.standings-preview-card {
+  overflow-x : auto;
+}
+
+@media (max-width: 480px) {
+  .tournament-card-actions .btn.primary { min-width: 100%; }
+  .tournament-card-follow { width: 100%; justify-content: center; }
+  #tourn-follow-btn { width: 100%; justify-content: center; margin-top: 4px; }
+}
