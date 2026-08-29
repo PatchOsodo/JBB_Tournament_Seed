@@ -147,7 +147,7 @@ const App = {
     if (active.length < 2) return; // nothing else running concurrently
 
     const groups = Events.groupByEventName(active);
-    const sorted = App._sortGroupsByRelevance(groups);
+    const sorted = Events.sortGroupsByRelevance(groups);
     if (sorted.length < 2) return; // only one active event overall — already featured
 
     const others = sorted.slice(1); // exclude the one already in the hero
