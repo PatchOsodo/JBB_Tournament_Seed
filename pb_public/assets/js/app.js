@@ -436,36 +436,21 @@ const App = {
       State.teamCounts  = teamCounts;
       State.tournaments = tournaments;
 
-      const filterStatus = App._homeStatusFilter;
-      const filteredTournaments = filterStatus === 'all'
-      ? tournaments
-      : tournaments.filter(t => t.status === filterStatus);
+      // Same gateway card for everyone, admin included — the full
+      // Active/Upcoming/Completed directory with Resume/Delete now lives
+      // only in admin.html, never on the public-facing home screen.
+      html += `
+      <div class="directory-gateway-card">
+        <div style="font-size:15px;font-weight:600;color:var(--text-primary);margin-bottom:6px;">
+          Browse every tournament
+        </div>
+        <p style="font-size:13px;color:var(--text-tertiary);margin-bottom:1rem;">
+          Active, upcoming, and completed — all in one place.
+        </p>
+        <a href="tournaments.html" class="btn primary">Explore All Tournaments →</a>
+      </div>`;
 
-      Logger.info('Tournaments loaded', {
-        count: tournaments.length, shown: filteredTournaments.length, filter: filterStatus,
-      });
-
-      if (!tournaments.length) {
-        list.innerHTML = `<div class="empty-state">
-        <span class="empty-icon">🏆</span>
-        No tournaments on the board yet.<br>Set one up and let's get the ball rolling.
-        </div>`;
-        return;
-      }
-
-      if (!filteredTournaments.length) {
-        const emptyMsg = {
-          active   : 'No tournaments are currently active.',
-          pending  : 'No upcoming tournaments right now.',
-          completed: 'No completed tournaments yet.',
-        }[filterStatus] || 'Nothing to show.';
-        list.innerHTML = `<div class="empty-state">
-        <span class="empty-icon">🏆</span>${emptyMsg}
-        </div>`;
-        return;
-      }
-
-      let html = '';
+      list.innerHTML = html;
 
       // Favourites section for guests and admins — unchanged, still shown
       // above whatever comes next regardless of what status those

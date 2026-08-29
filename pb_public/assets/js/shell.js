@@ -71,8 +71,9 @@ const Shell = {
   // state, sync the bottom-nav Account tab (with the inline sheet for
   // signed-in users), and highlight the active nav link.
   renderAuthBar(pb) {
-    const user    = pb.authStore.isValid ? pb.authStore.model : null;
-    const isAdmin = user?.role === 'super_admin' || user?.role === 'tournament_admin';
+    const user     = pb.authStore.isValid ? pb.authStore.model : null;
+    const isAdmin  = user?.role === 'super_admin' || user?.role === 'tournament_admin';
+    const canScore = isAdmin || user?.role === 'score_inputter';
 
     const navUsers = document.getElementById('nav-users');
     if (navUsers) navUsers.style.display = isAdmin ? '' : 'none';
@@ -80,6 +81,8 @@ const Shell = {
     if (navCourts) navCourts.style.display = isAdmin ? '' : 'none';
     const navAdmin = document.getElementById('nav-admin');
     if (navAdmin) navAdmin.style.display = isAdmin ? '' : 'none';
+    const navScores = document.getElementById('nav-scores');
+    if (navScores) navScores.style.display = canScore ? '' : 'none';
 
     const ctrl = document.getElementById('auth-controls');
     if (ctrl) {
@@ -113,7 +116,7 @@ const Shell = {
       if (user) {
         bottomAuthItem.innerHTML = `<span class="nav-icon">👤</span>${escHtml(user.name?.split(' ')[0] || 'Account')}`;
         bottomAuthItem.href      = '#';
-        bottomAuthItem.onclick   = (e) => { e.preventDefault(); Shell._showAccountSheet(user, isAdmin); };
+        bottomAuthItem.onclick   = (e) => { e.preventDefault(); Shell._showAccountSheet(user, isAdmin, canScore); };
       } else {
         bottomAuthItem.innerHTML = `<span class="nav-icon">👤</span>Sign in`;
         bottomAuthItem.href      = 'login.html';
@@ -170,7 +173,7 @@ const Shell = {
     });
   },
 
-  _showAccountSheet(user, isAdmin) {
+  _showAccountSheet(user, isAdmin, canScore = isAdmin) {
     document.getElementById('_acct-sheet')?.remove();
     const roleLabel = {
       super_admin: '⚡ Super Admin', tournament_admin: '✏️ Admin',
@@ -180,12 +183,17 @@ const Shell = {
     // Admin quick-links — the top nav where these normally live is hidden
     // below 600px in favor of this bottom sheet, so without this an admin
     // on a phone has no way to reach Admin/Users/Courts at all.
+    const canScore = isAdmin || user?.role === 'score_inputter';
+    const scoreLinkHtml = canScore
+      ? `<a href="scores.html" class="btn sm" style="width:100%;justify-content:flex-start;background:var(--accent-bright);color:#1a1200;border-color:var(--accent-bright);font-weight:700;">⚡ Score Entry</a>`
+      : '';
     const adminLinksHtml = isAdmin ? `
     <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:1rem;">
+    ${scoreLinkHtml}
     <a href="admin.html" class="btn sm ghost" style="width:100%;justify-content:flex-start;">📋 Admin dashboard</a>
     <a href="users.html" class="btn sm ghost" style="width:100%;justify-content:flex-start;">👥 Users</a>
     <a href="courts.html" class="btn sm ghost" style="width:100%;justify-content:flex-start;">🏟️ Courts</a>
-    </div>` : '';
+    </div>` : (scoreLinkHtml ? `<div style="margin-bottom:1rem;">${scoreLinkHtml}</div>` : '');
 
     const sheet = document.createElement('div');
     sheet.id = '_acct-sheet';

@@ -93,24 +93,10 @@ if ('serviceWorker' in navigator) {
 
     <div class="section-heading-row">
       <p class="section-label" style="margin:0">Tournament Directory</p>
-      <div class="admin-toolbar" id="home-admin-toolbar">
-        <button class="btn sm ghost" id="btn-organise" onclick="App.openOrganiseModal()">
-          Organise events
-        </button>
-        <button class="btn primary sm" id="btn-new-tournament" onclick="App.goToSetup()">
-          + New tournament
-        </button>
-      </div>
     </div>
-
-    <!-- Status filter — Active / Upcoming / Completed, reuses the same
-         .tab-row/.tab styling already used on the fixtures screen -->
-    <div class="tab-row" id="tournament-status-filter" style="margin-bottom:0.75rem;">
-      <button class="tab active" onclick="App.setHomeStatusFilter('all', this)">All</button>
-      <button class="tab" onclick="App.setHomeStatusFilter('active', this)">Active</button>
-      <button class="tab" onclick="App.setHomeStatusFilter('pending', this)">Upcoming</button>
-      <button class="tab" onclick="App.setHomeStatusFilter('completed', this)">Completed</button>
-    </div>
+    <!-- Admin authoring (New tournament / Organise events) and the full
+         Active/Upcoming/Completed directory now live only in admin.html —
+         this page is guest-safe regardless of who's signed in. -->
 
     <div class="success-banner" id="home-success">
       <span class="banner-icon">✓</span>

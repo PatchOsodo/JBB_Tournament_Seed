@@ -617,6 +617,13 @@ gap         : 8px;
 .app-nav .nav-link.active { background: var(--bg-primary); color: var(--accent);
   border: 0.5px solid var(--border-light); }
 
+.app-nav .nav-link.quick-score-btn {
+  background  : var(--accent-bright, #e8b82a);
+  color       : #1a1200;
+  font-weight : 700;
+}
+.app-nav .nav-link.quick-score-btn:hover { background: var(--secondary-dark); color: #1a1200; }
+
   /* Bottom nav bar — mobile only, remains fixed (not sticky) since it's
    *  always anchored to the viewport bottom regardless of scroll position. */
   .bottom-nav {

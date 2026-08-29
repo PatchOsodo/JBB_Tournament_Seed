@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Score Entry — Junior Ballers 254</title>
+<link rel="icon" type="image/x-icon" href="assets/img/favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/img/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/img/favicon-192.png">
+<link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/styles.css?v=3.2.0">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1a5c28">
+<meta name="robots" content="noindex, nofollow">
+</head>
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('assets/js/sw.js').catch(console.warn);
+}
+</script>
+<body>
+
+<div class="page-wrapper">
+<div class="app">
+
+  <div class="app-header">
+    <div>
+      <h1>⚡ Score Entry</h1>
+      <p>Court-side scoring — no admin tools, just the games that need a result</p>
+    </div>
+    <div class="app-header-right">
+      <span class="conn-dot" id="conn-dot"></span>
+      <span class="conn-label" id="conn-label">Connecting...</span>
+    </div>
+  </div>
+
+  <div class="empty-state" id="not-scorer-notice" style="display:none;">
+    <span class="empty-icon">🔒</span>
+    This page is only available to score inputters and tournament admins.
+    <br><br>
+    <a href="login.html" class="btn sm primary">Sign in</a>
+  </div>
+
+  <div id="scores-body" style="display:none;">
+
+    <div style="margin-bottom:1rem;">
+      <label style="font-size:13px;color:var(--text-secondary);display:block;margin-bottom:6px;">Tournament</label>
+      <select id="scores-tournament-picker" class="tournament-name-input" style="margin-bottom:0;" onchange="Scores.onTournamentChange()"></select>
+    </div>
+
+    <div class="qs-filter-tabs tab-row" id="scores-filter-tabs">
+      <button class="tab active" onclick="Scores.setFilter('unscored', this)">Unscored</button>
+      <button class="tab" onclick="Scores.setFilter('today', this)">Today's games</button>
+      <button class="tab" onclick="Scores.setFilter('all', this)">All</button>
+    </div>
+
+    <div class="error-banner" id="scores-error"><span id="scores-error-msg"></span></div>
+
+    <div class="qs-match-list" id="scores-match-list" style="max-height:none;"></div>
+
+  </div>
+
+</div>
+</div>
+
+<!-- SCORE ENTRY MODAL -->
+<div class="modal-overlay" id="score-entry-modal">
+  <div class="modal">
+    <h2 id="qs-modal-title">Enter result</h2>
+
+    <div class="modal-teams">
+      <div class="modal-team-name" id="qs-home-name">Home</div>
+      <div class="modal-vs">vs</div>
+      <div class="modal-team-name" id="qs-away-name">Away</div>
+    </div>
+
+    <div class="qs-score-grid">
+      <div>
+        <div class="qs-score-team-label" id="qs-home-label">Home</div>
+        <input type="number" class="qs-score-input" id="qs-score-home" min="0" placeholder="0" inputmode="numeric">
+      </div>
+      <div class="score-sep">–</div>
+      <div>
+        <div class="qs-score-team-label" id="qs-away-label">Away</div>
+        <input type="number" class="qs-score-input" id="qs-score-away" min="0" placeholder="0" inputmode="numeric">
+      </div>
+    </div>
+
+    <div class="modal-error" id="qs-modal-error"></div>
+
+    <button class="qs-save-btn" id="qs-save-btn" onclick="Scores.save()">Save &amp; Publish</button>
+    <div class="qs-save-toast" id="qs-save-toast"></div>
+
+    <div class="btn-row" style="margin-top:0.75rem;">
+      <button class="btn ghost" style="width:100%;" onclick="Scores.closeModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script src="assets/js/pocketbase.umd.js"></script>
+<script src="assets/js/shell.js"></script>
+<script src="assets/js/config.js"></script>
+<script src="assets/js/generators.js"></script>
+<script src="assets/js/scores.js"></script>
+</body>
+</html>
