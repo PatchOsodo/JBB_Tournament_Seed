@@ -1288,12 +1288,27 @@ const App = {
         await App._renderManageTeamsList();
       }
     } catch (e) {
-      Logger.error('saveBanner failed', { error: e.message });
+      Logger.error('saveBanner failed', { error: e.message, status: e.status, data: e.data });
       if (errEl) {
-        errEl.textContent = `Couldn't save: ${e.message}`;
+        errEl.textContent = App._describeBannerError(e);
         errEl.style.display = 'block';
       }
     }
+  },
+
+  // Surfaces the ACTUAL reason instead of PocketBase's generic
+  // "Something went wrong." fallback, which the SDK shows whenever the
+  // server response has no top-level `message` — this happens both for
+  // rule-rejected requests (403, e.g. the registration-deadline lock
+  // blocking tournament_admin from updating the record at all) and for
+  // field validation failures (e.g. the 5MB maxSize on banner_image).
+  _describeBannerError(e) {
+    if (e.status === 403) {
+      return "You don't have permission to update this tournament right now. If its registration deadline has passed, only a super_admin can edit it while it's locked — that lock currently blocks ALL edits to the tournament record, not just registration.";
+    }
+    const fieldMsg = e.data?.data?.banner_image?.message;
+    if (fieldMsg) return `Image rejected: ${fieldMsg} (max 5MB, JPEG/PNG/WebP only).`;
+    return `Couldn't save: ${e.data?.message || e.message}`;
   },
 
   // Roster/format/pool-assignment/preview screen. Layout order:

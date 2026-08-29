@@ -19,20 +19,26 @@ const Auth = {
   // Logged in, no special privileges — favourites, personalised home screen.
   isFan()          { return Auth.role() === 'fan'; },
 
-  // Logged in, can enter/edit scores ONLY for tournaments they're assigned to.
+  // Logged in, can enter/edit scores for ANY tournament — see canEnterScores().
   isScoreInputter(){ return Auth.role() === 'score_inputter'; },
 
   isSuperAdmin()   { return Auth.role() === 'super_admin'; },
   isAdmin()        { return Auth.isSuperAdmin() || Auth.role() === 'tournament_admin'; },
 
-  // A score inputter's tournament assignments (ignored for other roles).
+  // A score inputter's tournament assignments. No longer used by
+  // canEnterScores() below (score_inputter now has universal access, see
+  // migration 1785714000_score_inputter_universal_access.js) — left here
+  // in case this list is reused for something else later (e.g. a "notify
+  // these scorers" feature), since the underlying data still exists.
   assignedTournaments() { return Auth.user()?.assigned_tournaments ?? []; },
 
-  // tournamentId is required for score_inputter; admins can enter scores
-  // anywhere so it's optional for them.
+  // tournamentId kept in the signature for compatibility with existing
+  // call sites (Auth.canEnterScores(fixture.tournament) etc.) — no longer
+  // actually consulted for score_inputter, which now matches the
+  // unconditional server-side fixtures.updateRule.
   canEnterScores(tournamentId) {
     if (Auth.isAdmin()) return true;
-    if (Auth.isScoreInputter()) return Auth.assignedTournaments().includes(tournamentId);
+    if (Auth.isScoreInputter()) return true;
     return false;
   },
 
