@@ -66,13 +66,13 @@ const TournamentPage = {
     try {
       const [tournament, teamsCount, fixtures] = await Promise.all([
         pb.collection('tournaments').getOne(id),
-                                                                   pb.collection('teams').getList(1, 1, { filter: `tournament="${id}"`, requestKey: null }),
-                                                                   pb.collection('fixtures').getFullList({
-                                                                     filter    : `tournament="${id}"`,
-                                                                     sort      : 'round,match_number',
-                                                                     expand    : 'home_team,away_team,winner',
-                                                                     requestKey: null,
-                                                                   }),
+        pb.collection('teams').getList(1, 1, { filter: `tournament="${id}"`, requestKey: null }),
+        pb.collection('fixtures').getFullList({
+          filter    : `tournament="${id}"`,
+          sort      : 'round,match_number',
+          expand    : 'home_team.master_team,away_team.master_team,winner',
+          requestKey: null,
+        }),
       ]);
 
       TournamentPage.tournament = tournament;
@@ -103,6 +103,9 @@ const TournamentPage = {
     const metaParts = [t.name, t.format.replace(/_/g, ' ')];
     if (t.age_group || t.gender) metaParts.push([t.age_group, t.gender].filter(Boolean).join(' '));
     document.getElementById('tourn-meta').textContent = metaParts.filter(Boolean).join(' · ');
+
+    const tagEl = document.getElementById('tourn-tag');
+    if (tagEl) tagEl.innerHTML = tournamentTagHtml(t);
 
     const badge = document.getElementById('tourn-status');
     const label = { pending: 'Not yet started', active: 'Ongoing', completed: 'Complete' }[t.status] || t.status;
@@ -158,8 +161,8 @@ const TournamentPage = {
   },
 
   _matchCard(f, isDone) {
-    const home  = f.expand?.home_team?.name || 'TBD';
-    const away  = f.expand?.away_team?.name || 'TBD';
+    const homeHtml = teamDisplayHtml(f.expand?.home_team);
+    const awayHtml = teamDisplayHtml(f.expand?.away_team);
     const wHome = isDone && f.winner === f.home_team;
     const wAway = isDone && f.winner === f.away_team;
     const when  = f.scheduled_start_time
@@ -170,9 +173,9 @@ const TournamentPage = {
 
     return `<div class="match-card ${isDone ? 'completed' : ''}">
     <span class="match-num">${escHtml(f.round_label || `R${f.round}`)}</span>
-    <span class="team-a ${wHome ? 'winner-bold' : ''}">${escHtml(home)}</span>
+    <span class="team-a ${wHome ? 'winner-bold' : ''}">${homeHtml}</span>
     <span class="vs">vs</span>
-    <span class="team-b ${wAway ? 'winner-bold' : ''}">${escHtml(away)}</span>
+    <span class="team-b ${wAway ? 'winner-bold' : ''}">${awayHtml}</span>
     ${isDone
       ? `<span class="match-score">${f.home_score} – ${f.away_score}</span>`
       : `<span class="match-timecourt-chip">${escHtml(when)}</span>`}
@@ -201,13 +204,13 @@ const TournamentPage = {
 
       const [teams, fixtures] = await Promise.all([
         pb.collection('teams').getFullList({
-          filter: `(${idFilter})`, requestKey: null,
+          filter: `(${idFilter})`, expand: 'master_team', requestKey: null,
         }),
         pb.collection('fixtures').getFullList({
           filter    : `(${idFilter})`,
-                                              sort      : 'round,match_number',
-                                              expand    : 'home_team,away_team,winner,tournament',
-                                              requestKey: null,
+          sort      : 'round,match_number',
+          expand    : 'home_team.master_team,away_team.master_team,winner,tournament',
+          requestKey: null,
         }),
       ]);
 
@@ -330,8 +333,8 @@ const TournamentPage = {
   // is the CATEGORY (e.g. "U16 Boys") instead of the round — every game
   // in event mode needs to say which category it belongs to.
   _eventMatchCard(f, isDone) {
-    const home    = f.expand?.home_team?.name || 'TBD';
-    const away    = f.expand?.away_team?.name || 'TBD';
+    const homeHtml = teamDisplayHtml(f.expand?.home_team);
+    const awayHtml = teamDisplayHtml(f.expand?.away_team);
     const wHome   = isDone && f.winner === f.home_team;
     const wAway   = isDone && f.winner === f.away_team;
     const catName = f.expand?.tournament?.name || '';
@@ -343,9 +346,9 @@ const TournamentPage = {
 
     return `<div class="match-card ${isDone ? 'completed' : ''}">
     <span class="match-num">${escHtml(catName)}</span>
-    <span class="team-a ${wHome ? 'winner-bold' : ''}">${escHtml(home)}</span>
+    <span class="team-a ${wHome ? 'winner-bold' : ''}">${homeHtml}</span>
     <span class="vs">vs</span>
-    <span class="team-b ${wAway ? 'winner-bold' : ''}">${escHtml(away)}</span>
+    <span class="team-b ${wAway ? 'winner-bold' : ''}">${awayHtml}</span>
     ${isDone
       ? `<span class="match-score">${f.home_score} – ${f.away_score}</span>`
       : (when ? `<span class="match-timecourt-chip">${escHtml(when)}</span>` : '')}
@@ -406,7 +409,7 @@ const TournamentPage = {
       ${s.rows.map((r, i) => `
         <tr>
         <td class="standings-preview-rank">${i + 1}</td>
-        <td>${escHtml(r.name)}</td>
+        <td ${r.fullName && r.fullName !== r.name ? `title="${escHtml(r.fullName)}"` : ''}>${escHtml(r.name)}</td>
         <td class="standings-preview-num standings-preview-wins">${r.wins}</td>
         <td class="standings-preview-num">${r.losses}</td>
         <td class="standings-preview-num" style="color:${r.pointDiff >= 0 ? 'var(--accent)' : 'var(--danger)'}">

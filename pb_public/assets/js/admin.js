@@ -45,13 +45,13 @@ const Admin = {
       pb.collection('fixtures').getFullList({
         filter    : `status="scheduled" && is_bye=false && home_team!="" && away_team!="" && scheduled_start_time!=""`,
         sort      : '+scheduled_start_time',
-        expand    : 'home_team,away_team,tournament',
+        expand    : 'home_team.master_team,away_team.master_team,tournament',
         requestKey: null,
       }),
       pb.collection('fixtures').getList(1, 5, {
         filter    : `status="completed" && is_bye=false`,
         sort      : '-updated',
-        expand    : 'home_team,away_team,winner,tournament',
+        expand    : 'home_team.master_team,away_team.master_team,winner,tournament',
         requestKey: null,
       }),
     ]);
@@ -120,15 +120,15 @@ const Admin = {
     }
 
     el.innerHTML = games.map(f => {
-      const home = f.expand?.home_team?.name || 'TBD';
-      const away = f.expand?.away_team?.name || 'TBD';
+      const homeHtml = teamDisplayHtml(f.expand?.home_team);
+      const awayHtml = teamDisplayHtml(f.expand?.away_team);
       const tName = f.expand?.tournament?.name || '';
       const time = new Date(f.scheduled_start_time).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
       return `<div class="match-card">
         <span class="match-num">${escHtml(time)}</span>
-        <span class="team-a">${escHtml(home)}</span>
+        <span class="team-a">${homeHtml}</span>
         <span class="vs">vs</span>
-        <span class="team-b">${escHtml(away)}</span>
+        <span class="team-b">${awayHtml}</span>
         <span class="match-action" style="min-width:auto;color:var(--text-tertiary);">${escHtml(tName)}</span>
       </div>`;
     }).join('');
@@ -144,15 +144,15 @@ const Admin = {
     }
 
     el.innerHTML = results.map(f => {
-      const home  = f.expand?.home_team?.name || 'TBD';
-      const away  = f.expand?.away_team?.name || 'TBD';
+      const homeHtml = teamDisplayHtml(f.expand?.home_team);
+      const awayHtml = teamDisplayHtml(f.expand?.away_team);
       const tName = f.expand?.tournament?.name || '';
       const wHome = f.winner === f.home_team;
       const wAway = f.winner === f.away_team;
       return `<div class="match-card completed">
-        <span class="team-a ${wHome ? 'winner-bold' : ''}">${escHtml(home)}</span>
+        <span class="team-a ${wHome ? 'winner-bold' : ''}">${homeHtml}</span>
         <span class="vs">vs</span>
-        <span class="team-b ${wAway ? 'winner-bold' : ''}">${escHtml(away)}</span>
+        <span class="team-b ${wAway ? 'winner-bold' : ''}">${awayHtml}</span>
         <span class="match-score">${f.home_score} – ${f.away_score}</span>
         <span class="match-action" style="min-width:auto;color:var(--text-tertiary);">${escHtml(tName)}</span>
       </div>`;

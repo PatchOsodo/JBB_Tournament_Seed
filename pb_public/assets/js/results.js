@@ -43,7 +43,7 @@ const ResultsPage = {
         pb.collection('fixtures').getFullList({
           filter    : `tournament="${id}" && status="completed" && is_bye=false`,
           sort      : '-updated',
-          expand    : 'home_team,away_team,winner,court',
+          expand    : 'home_team.master_team,away_team.master_team,winner,court',
           requestKey: null,
         }),
       ]);
@@ -69,7 +69,11 @@ const ResultsPage = {
     if (t.age_group || t.gender) metaParts.push([t.age_group, t.gender].filter(Boolean).join(' '));
     document.getElementById('res-meta').textContent = metaParts.filter(Boolean).join(' · ');
 
-    Shell.renderCategoryNav('res-nav', id, 'results');  },
+    const tagEl = document.getElementById('res-tag');
+    if (tagEl) tagEl.innerHTML = tournamentTagHtml(t);
+
+    Shell.renderCategoryNav('res-nav', id, 'results');
+  },
 
   // Optional round/group narrowing, same interaction as fixtures.html's
   // filter — built from whatever round/group labels actually appear among
@@ -112,8 +116,8 @@ const ResultsPage = {
   },
 
   _resultCard(f) {
-    const home  = f.expand?.home_team?.name || 'TBD';
-    const away  = f.expand?.away_team?.name || 'TBD';
+    const homeHtml = teamDisplayHtml(f.expand?.home_team);
+    const awayHtml = teamDisplayHtml(f.expand?.away_team);
     const wHome = f.winner === f.home_team;
     const wAway = f.winner === f.away_team;
     const round = f.round_label || `Round ${f.round}`;
@@ -125,11 +129,11 @@ const ResultsPage = {
     return `<div class="result-card" data-section-key="${key}">
       <div class="result-teams">
         <div class="result-team ${wHome ? 'winner' : ''}">
-          <span class="result-team-name">${escHtml(home)}</span>
+          <span class="result-team-name">${homeHtml}</span>
           <span class="result-team-score">${f.home_score}</span>
         </div>
         <div class="result-team ${wAway ? 'winner' : ''}">
-          <span class="result-team-name">${escHtml(away)}</span>
+          <span class="result-team-name">${awayHtml}</span>
           <span class="result-team-score">${f.away_score}</span>
         </div>
       </div>

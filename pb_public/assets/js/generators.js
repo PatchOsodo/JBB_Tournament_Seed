@@ -238,15 +238,17 @@ function _computeGroupStandings(fixtures, teams, groupName) {
     const standingsMap = {};
     teamIdsInGroup.forEach(id => {
       const teamRecord = teams.find(t => t.id === id);
+      const fullName = teamRecord?.name || `Team (${id.slice(0, 6)})`;
       standingsMap[id] = {
         teamId     : id,
-        name       : teamRecord?.name || `Team (${id.slice(0, 6)})`,
-                           played     : 0,
-                           wins       : 0,
-                           losses     : 0,
-                           ptsFor     : 0,
-                           ptsAgainst : 0,
-                           get pointDiff() { return this.ptsFor - this.ptsAgainst; },
+        name       : teamRecord?.expand?.master_team?.short_name || fullName,
+        fullName,
+        played     : 0,
+        wins       : 0,
+        losses     : 0,
+        ptsFor     : 0,
+        ptsAgainst : 0,
+        get pointDiff() { return this.ptsFor - this.ptsAgainst; },
       };
     });
 

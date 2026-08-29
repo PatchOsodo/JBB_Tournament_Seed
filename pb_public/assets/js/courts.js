@@ -113,8 +113,7 @@ const Courts = {
   },
 
   _teamName(fixture, side) {
-    const expanded = fixture.expand?.[side];
-    return expanded ? (expanded.name || 'TBD') : 'TBD';
+    return teamDisplayName(fixture.expand?.[side]);
   },
 
   _courtSelect(fixture) {
@@ -311,7 +310,7 @@ const DB = {
   async getFixtures(tournamentId) {
     return pb.collection('fixtures').getFullList({
       filter: `tournament="${tournamentId}"`, sort: 'round,match_number',
-      expand: 'home_team,away_team,court', requestKey: null,
+      expand: 'home_team.master_team,away_team.master_team,court', requestKey: null,
     });
   },
   async createCourt(tournamentId, courtName) {

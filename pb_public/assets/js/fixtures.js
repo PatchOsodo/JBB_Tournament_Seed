@@ -39,7 +39,7 @@ const FixturesPage = {
         pb.collection('fixtures').getFullList({
           filter    : `tournament="${id}"`,
           sort      : 'round,match_number',
-          expand    : 'home_team,away_team,winner,court',
+          expand    : 'home_team.master_team,away_team.master_team,winner,court',
           requestKey: null,
         }),
       ]);
@@ -64,6 +64,8 @@ const FixturesPage = {
     const metaParts = [t.name, t.format.replace(/_/g, ' ')];
     if (t.age_group || t.gender) metaParts.push([t.age_group, t.gender].filter(Boolean).join(' '));
     document.getElementById('fx-meta').textContent = metaParts.filter(Boolean).join(' · ');
+    const tagEl = document.getElementById('fx-tag');
+    if (tagEl) tagEl.innerHTML = tournamentTagHtml(t);
 
     Shell.renderCategoryNav('fx-nav', id, 'fixtures');
   },
@@ -123,8 +125,8 @@ const FixturesPage = {
   },
 
   _matchCard(f) {
-    const home   = f.expand?.home_team?.name || 'TBD';
-    const away   = f.expand?.away_team?.name || 'TBD';
+    const homeHtml = teamDisplayHtml(f.expand?.home_team);
+    const awayHtml = teamDisplayHtml(f.expand?.away_team);
     const isDone = f.status === 'completed';
     const wHome  = isDone && f.winner === f.home_team;
     const wAway  = isDone && f.winner === f.away_team;
@@ -139,9 +141,9 @@ const FixturesPage = {
 
     return `<div class="match-card ${isDone ? 'completed' : ''}">
       <span class="match-num">${escHtml(f.round_label || ('R' + f.round))}</span>
-      <span class="team-a ${wHome ? 'winner-bold' : ''} ${home === 'TBD' ? 'tbd' : ''}">${escHtml(home)}</span>
+      <span class="team-a ${wHome ? 'winner-bold' : ''}">${homeHtml}</span>
       <span class="vs">vs</span>
-      <span class="team-b ${wAway ? 'winner-bold' : ''} ${away === 'TBD' ? 'tbd' : ''}">${escHtml(away)}</span>
+       <span class="team-b ${wAway ? 'winner-bold' : ''}">${awayHtml}</span>
       ${isDone
         ? `<span class="match-score">${f.home_score} – ${f.away_score}</span>`
         : (timeCourt ? `<div class="match-timecourt-chip">${escHtml(timeCourt)}</div>` : '')}

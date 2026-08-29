@@ -248,7 +248,7 @@ const DB = {
     return pb.collection('fixtures').getFullList({
       filter    : `tournament="${tournamentId}"`,
       sort      : 'round,match_number',
-      expand    : 'home_team,away_team,winner,court',
+      expand    : 'home_team.master_team,away_team.master_team,winner,court',
       requestKey: null,
     });
   },

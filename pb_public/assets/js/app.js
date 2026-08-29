@@ -2018,6 +2018,9 @@ const App = {
     document.getElementById('sched-title').textContent = t.event_name || t.name;
     document.getElementById('sched-meta').innerHTML =`${State.teams.length} teams · ${t.format.replace(/_/g, ' ')} ${categoryBadge}`;
 
+    const schedTagEl = document.getElementById('sched-tag');
+    if (schedTagEl) schedTagEl.innerHTML = tournamentTagHtml(t);
+
     const manageTeamsBtn = document.getElementById('btn-manage-teams');
     if (manageTeamsBtn) manageTeamsBtn.style.display = Auth.isAdmin() ? '' : 'none';
 
@@ -2118,7 +2121,7 @@ const App = {
         ${i + 1}${adv ? ' ✓' : ''}
         </td>
         <td style="padding:8px;font-size:14px;font-weight:${adv ? '700' : '500'};
-        color:var(--text-primary)">
+        color:var(--text-primary)" ${s.fullName && s.fullName !== s.name ? `title="${escHtml(s.fullName)}"` : ''}>
         ${escHtml(s.name)}
         </td>
         <td style="padding:8px;font-size:12px;text-align:center;color:var(--text-tertiary)">${s.played}</td>
@@ -2185,6 +2188,8 @@ const App = {
       const cards = matches.map((m, i) => {
         const hn     = m.expand?.home_team?.name || 'TBD';
         const an     = m.expand?.away_team?.name || 'TBD';
+        const hnDisp = teamDisplayName(m.expand?.home_team) || 'TBD';
+        const anDisp = teamDisplayName(m.expand?.away_team) || 'TBD';
         const isDone = m.status === 'completed';
         const wH     = isDone && m.winner === m.home_team;
         const wA     = isDone && m.winner === m.away_team;
@@ -2197,13 +2202,13 @@ const App = {
         ${can ? `onclick="App.openScoreModal('${m.id}')"` : ''}>
         <div class="nba-team ${wH ? 'winner' : ''} ${hn === 'TBD' ? 'tbd' : ''}">
         <span class="nba-seed">${m.expand?.home_team ? State.teams.findIndex(t => t.id === m.home_team) + 1 : ''}</span>
-        <span class="nba-name">${escHtml(hn)}</span>
+        <span class="nba-name" ${hnDisp !== hn ? `title="${escHtml(hn)}"` : ''}>${escHtml(hnDisp)}</span>
         ${isDone ? `<span class="nba-score">${m.home_score}</span>` : ''}
         </div>
         <div class="nba-divider"></div>
         <div class="nba-team ${wA ? 'winner' : ''} ${an === 'TBD' ? 'tbd' : ''}">
         <span class="nba-seed">${m.expand?.away_team ? State.teams.findIndex(t => t.id === m.away_team) + 1 : ''}</span>
-        <span class="nba-name">${escHtml(an)}</span>
+        <span class="nba-name" ${anDisp !== an ? `title="${escHtml(an)}"` : ''}>${escHtml(anDisp)}</span>
         ${isDone ? `<span class="nba-score">${m.away_score}</span>` : ''}
         </div>
         </div>`;
@@ -2277,6 +2282,8 @@ const App = {
   _matchCard(fixture, num) {
     const homeName = fixture.expand?.home_team?.name || 'TBD';
     const awayName = fixture.expand?.away_team?.name || 'TBD';
+    const homeHtml = teamDisplayHtml(fixture.expand?.home_team);
+    const awayHtml = teamDisplayHtml(fixture.expand?.away_team);
     const isDone   = fixture.status === 'completed';
     const canEnter = !isDone && homeName !== 'TBD' && awayName !== 'TBD' && Auth.canEnterScores(fixture.tournament);
     const wHome    = isDone && fixture.winner === fixture.home_team;
@@ -2305,9 +2312,9 @@ const App = {
     return `<div class="match-card ${isDone ? 'completed' : ''} ${canEnter ? 'clickable' : ''}"
     ${canEnter ? `onclick="App.openScoreModal('${fixture.id}')"` : ''}>
     <span class="match-num">M${num}</span>
-    <span class="team-a ${homeName==='TBD'?'tbd':''} ${wHome?'winner-bold':''}">${escHtml(homeName)}</span>
+    <span class="team-a ${homeName==='TBD'?'tbd':''} ${wHome?'winner-bold':''}">${homeHtml}</span>
     <span class="vs">vs</span>
-    <span class="team-b ${awayName==='TBD'?'tbd':''} ${wAway?'winner-bold':''}">${escHtml(awayName)}</span>
+    <span class="team-b ${awayName==='TBD'?'tbd':''} ${wAway?'winner-bold':''}">${awayHtml}</span>
     ${scoreHtml}
     ${editBtn}
     ${timeCourtBtn}

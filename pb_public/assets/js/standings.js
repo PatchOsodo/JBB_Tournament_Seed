@@ -58,9 +58,11 @@ function _computeStandings(fixtures, teams, groupName) {
   const standingsMap = {};
   teamIdsInScope.forEach(id => {
     const teamRecord = teams.find(t => t.id === id);
+    const fullName = teamRecord?.name || `Team (${id.slice(0, 6)})`;
     standingsMap[id] = {
       teamId     : id,
-      name       : teamRecord?.name || `Team (${id.slice(0, 6)})`,
+      name       : teamRecord?.expand?.master_team?.short_name || fullName,
+      fullName,
       played     : 0,
       wins       : 0,
       losses     : 0,
@@ -111,7 +113,7 @@ const StandingsPage = {
     try {
       const [tournament, teams, fixtures] = await Promise.all([
         pb.collection('tournaments').getOne(id),
-        pb.collection('teams').getFullList({ filter: `tournament="${id}"`, requestKey: null }),
+        pb.collection('teams').getFullList({ filter: `tournament="${id}"`, expand: 'master_team', requestKey: null }),
         pb.collection('fixtures').getFullList({
           filter    : `tournament="${id}"`,
           sort      : 'round,match_number',
@@ -141,7 +143,11 @@ const StandingsPage = {
     if (t.age_group || t.gender) metaParts.push([t.age_group, t.gender].filter(Boolean).join(' '));
     document.getElementById('st-meta').textContent = metaParts.filter(Boolean).join(' · ');
 
-    Shell.renderCategoryNav('st-nav', id, 'standings');  },
+    const tagEl = document.getElementById('st-tag');
+    if (tagEl) tagEl.innerHTML = tournamentTagHtml(t);
+
+    Shell.renderCategoryNav('st-nav', id, 'standings');
+  },
 
   _renderTables() {
     const wrap = document.getElementById('st-tables');
@@ -194,7 +200,8 @@ const StandingsPage = {
                    color:${adv ? 'var(--accent)' : 'var(--text-secondary)'}">
           ${i + 1}${adv ? ' ✓' : ''}
         </td>
-        <td style="padding:6px 8px;font-size:13px;font-weight:${adv ? '600' : '400'}">
+        <td style="padding:6px 8px;font-size:13px;font-weight:${adv ? '600' : '400'}"
+            ${s.fullName && s.fullName !== s.name ? `title="${escHtml(s.fullName)}"` : ''}>
           ${escHtml(s.name)}
         </td>
         <td style="padding:6px 8px;font-size:12px;text-align:center">${s.played}</td>

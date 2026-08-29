@@ -167,11 +167,11 @@ const BracketPage = {
     try {
       const [tournament, teams, fixtures] = await Promise.all([
         pb.collection('tournaments').getOne(id),
-        pb.collection('teams').getFullList({ filter: `tournament = "${id}"`, sort: 'seed' }),
+        pb.collection('teams').getFullList({ filter: `tournament = "${id}"`, sort: 'seed', expand: 'master_team' }),
         pb.collection('fixtures').getFullList({
           filter : `tournament = "${id}"`,
           sort   : 'round,match_number',
-          expand : 'home_team,away_team,winner',
+          expand : 'home_team.master_team,away_team.master_team,winner',
         }),
       ]);
       BracketPage.tournament = tournament;
@@ -201,6 +201,8 @@ const BracketPage = {
     if (metaEl)  metaEl.textContent  =
       `${BracketPage.teams.length} teams · ${t.format.replace(/_/g,' ')} · ${done}/${fx.length} matches played`;
     if (badgeEl) { badgeEl.textContent = t.status; badgeEl.className = `status-badge badge-${t.status}`; }
+    const tagEl = document.getElementById('bracket-tag');
+    if (tagEl) tagEl.innerHTML = tournamentTagHtml(t);
     BracketPage._renderNav(t.id);
   },
 
@@ -375,10 +377,13 @@ const BracketPage = {
     };
 
     /* ── 3. Draw a single team row (horizontal: badge | name | score) ──────── */
-    const drawSlot = (x, slotY, name, teamId, isWinner, score, isDone) => {
+    const drawSlot = (x, slotY, name, teamId, isWinner, score, isDone, fullName) => {
       const isTBD  = !teamId;
       const bgCol  = isTBD ? 'transparent' : badgeColor(name);
       const parts  = [];
+      if (fullName && fullName !== name) {
+        parts.push(`<title>${escHtml(fullName)}</title>`);
+      }
 
       /* ── winner row tint ── */
       if (isWinner) {
@@ -460,8 +465,10 @@ const BracketPage = {
 
     /* ── 4. Draw a match card (two horizontal team rows) ───────────────────── */
     const drawCard = (x, y, fixture, label, showLabel) => {
-      const hn    = fixture.expand?.home_team?.name || 'TBD';
-      const an    = fixture.expand?.away_team?.name || 'TBD';
+      const hFull = fixture.expand?.home_team?.name || 'TBD';
+      const aFull = fixture.expand?.away_team?.name || 'TBD';
+      const hn    = teamDisplayName(fixture.expand?.home_team);
+      const an    = teamDisplayName(fixture.expand?.away_team);
       const done  = fixture.status === 'completed';
       const hId   = rid(fixture.home_team);
       const aId   = rid(fixture.away_team);
@@ -489,8 +496,8 @@ const BracketPage = {
       );
 
       /* team rows */
-      drawSlot(x, y,          hn, hId, wH, fixture.home_score, done);
-      drawSlot(x, y + TEAM_H, an, aId, wA, fixture.away_score, done);
+      drawSlot(x, y,          hn, hId, wH, fixture.home_score, done, hFull);
+      drawSlot(x, y + TEAM_H, an, aId, wA, fixture.away_score, done, aFull);
     };
 
   /* ── 5. Straight L-shaped connectors ────────────────────────────────────
