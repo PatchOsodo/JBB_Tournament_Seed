@@ -3200,3 +3200,103 @@ max-width : 420px;
   display       : none;
 }
 .qs-save-toast.visible { display: block; }
+/* =============================================================================
+ *  NAV REORG — DESKTOP "⚙ Admin ▾" DROPDOWN
+ *  Wraps admin.html/scores.html/users.html/courts.html/manage.html links,
+ *  which keep their own ids and individual role-based visibility exactly
+ *  as before (see Shell.renderAuthBar). This only styles the wrapper,
+ *  trigger button, and popover panel. Hidden entirely on mobile because
+ *  the whole .app-nav is already display:none below 600px.
+ *  ============================================================================= */
+.nav-admin-menu {
+  position : relative;
+}
+.nav-admin-trigger {
+  display        : inline-flex;
+  align-items    : center;
+  gap            : 4px;
+  font-family    : inherit;
+}
+.nav-admin-caret {
+  font-size  : 10px;
+  transition : transform 0.15s;
+}
+.nav-admin-menu.open .nav-admin-caret {
+  transform : rotate(180deg);
+}
+.nav-admin-menu.open .nav-admin-trigger {
+  background : var(--bg-tertiary);
+  color      : var(--text-primary);
+}
+.nav-admin-dropdown {
+  display       : none;
+  position      : absolute;
+  top           : calc(100% + 6px);
+  right         : 0;
+  min-width     : 190px;
+  background    : var(--bg-primary);
+  border        : 0.5px solid var(--border-light);
+  border-radius : var(--radius-md);
+  box-shadow    : 0 10px 28px rgba(10,34,16,0.18);
+  padding       : 6px;
+  z-index       : 160;
+}
+.nav-admin-menu.open .nav-admin-dropdown {
+  display        : flex;
+  flex-direction : column;
+  gap            : 2px;
+}
+.nav-admin-dropdown .nav-admin-item {
+  display         : flex;
+  align-items     : center;
+  gap             : 8px;
+  padding         : 8px 10px;
+  border-radius   : var(--radius-sm);
+  font-size       : 13px;
+  font-weight     : 500;
+  color           : var(--text-secondary);
+  text-decoration : none;
+  white-space     : nowrap;
+  background      : transparent;
+  transition      : background 0.12s, color 0.12s;
+}
+.nav-admin-dropdown .nav-admin-item:hover,
+.nav-admin-dropdown .nav-admin-item.active {
+  background : var(--bg-secondary);
+  color      : var(--text-primary);
+}
+
+/* =============================================================================
+ *  NAV REORG — MOBILE ACCOUNT DRAWER ADMINISTRATION SECTION
+ *  Rendered by Shell._showAccountSheet(); same 5 destinations as the
+ *  desktop dropdown above, reached via the bottom nav's Account tab
+ *  instead of a 5th/6th bottom-nav icon.
+ *  ============================================================================= */
+.acct-section-label {
+  font-size      : 10px;
+  font-weight    : 700;
+  letter-spacing : 0.08em;
+  text-transform : uppercase;
+  color          : var(--text-tertiary);
+  margin         : 14px 0 6px;
+}
+.acct-section-label:first-child {
+  margin-top : 0;
+}
+.acct-admin-item {
+  display         : flex;
+  align-items     : center;
+  justify-content : space-between;
+  width           : 100%;
+  padding         : 10px 4px;
+  font-size       : 13px;
+  font-weight     : 500;
+  color           : var(--text-primary);
+  text-decoration : none;
+  border-bottom   : 0.5px solid var(--border-light);
+}
+.acct-admin-item:last-child { border-bottom : none; }
+.acct-admin-item .acct-chevron {
+  color     : var(--text-tertiary);
+  font-size : 14px;
+}

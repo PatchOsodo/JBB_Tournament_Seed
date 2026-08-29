@@ -2,21 +2,46 @@
   =============================================================================
   SHARED NAV PARTIAL — pb_public/assets/partials/nav.html
   Injected by shell.js the same way icons.svg is already fetched+injected.
-  Identical to what index.html/teams.html/stats.html/bracket.html/courts.html/
-  users.html each hardcoded separately before Phase 1.
+
+  Desktop: Home / Tournaments / Teams are always public. Admin-only
+  destinations (Dashboard, Score Entry, Users, Courts, Manage) are grouped
+  under a single "⚙ Admin ▾" dropdown (#nav-admin-menu), shown/hidden by
+  Shell.renderAuthBar() exactly like before — only the container changed,
+  not the visibility logic or any element id.
+
+  Mobile: bottom bar stays a strict 4 items (Home / Tournaments / Teams /
+  Account). Admin links never appear there — they're reachable from the
+  Account drawer, rendered by Shell._showAccountSheet() in shell.js.
+
+  Stats (nav-stats / stats.html) is intentionally excluded from navigation
+  on both desktop and mobile — do not re-add it.
   ============================================================================= -->
 <nav class="app-nav" id="app-nav">
   <a href="index.html" class="nav-brand"><img src="assets/img/logo.png" alt="Junior Ballers 254" class="nav-logo"> JB254</a>
   <div class="app-nav-links">
     <a href="index.html" class="nav-link" id="nav-home">🏠 Home</a>
+    <!-- Stats intentionally excluded from navigation — do not uncomment.
     <a href="stats.html" class="nav-link" id="nav-stats">📊 Stats</a>
-    <a href="teams.html" class="nav-link" id="nav-teams">🏀 Teams</a>
+    -->
     <a href="tournaments.html" class="nav-link" id="nav-tournaments">🏆 Tournaments</a>
-    <a href="admin.html" class="nav-link" id="nav-admin" style="display:none;">📋 Admin</a>
-    <a href="users.html" class="nav-link" id="nav-users" style="display:none;">👥 Users</a>
-    <a href="courts.html" class="nav-link" id="nav-courts" style="display:none;">🏟️ Courts</a>
-    <a href="scores.html" class="nav-link quick-score-btn" id="nav-scores" style="display:none;">⚡ Score Entry</a>
-    <a href="manage.html" class="nav-link" id="nav-manage" style="display:none;">🛠️ Manage</a>
+    <a href="teams.html" class="nav-link" id="nav-teams">🏀 Teams</a>
+
+    <!-- Admin dropdown — hidden entirely for guests/fans. Shown (display:'')
+         by Shell.renderAuthBar() when the signed-in user is an admin or a
+         score_inputter; each child link's own visibility is still governed
+         individually by role, exactly as before. -->
+    <div class="nav-admin-menu" id="nav-admin-menu" style="display:none;">
+      <button type="button" class="nav-link nav-admin-trigger" id="nav-admin-trigger" aria-haspopup="true" aria-expanded="false">
+        ⚙ Admin <span class="nav-admin-caret">▾</span>
+      </button>
+      <div class="nav-admin-dropdown" id="nav-admin-dropdown">
+        <a id="nav-admin"  href="admin.html"  class="nav-link nav-admin-item" style="display:none;">📋 Dashboard</a>
+        <a id="nav-scores" href="scores.html" class="nav-link nav-admin-item" style="display:none;">⚡ Score Entry</a>
+        <a id="nav-users"  href="users.html"  class="nav-link nav-admin-item" style="display:none;">👥 Users</a>
+        <a id="nav-courts" href="courts.html" class="nav-link nav-admin-item" style="display:none;">🏟️ Courts</a>
+        <a id="nav-manage" href="manage.html" class="nav-link nav-admin-item" style="display:none;">🛠️ Manage</a>
+      </div>
+    </div>
   </div>
   <div id="auth-controls"></div>
 </nav>

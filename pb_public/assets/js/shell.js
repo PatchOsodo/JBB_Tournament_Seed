@@ -1,36 +1,45 @@
-/**
- * =============================================================================
- * shell.js — pb_public/assets/js/shell.js
- *
- * Shared across ALL pages (public + admin). Replaces the per-page duplicated
- * auth-bar renderers previously in: app.js (_renderAuthBar), bracket.js
- * (_bracketRenderAuthBar), courts.js (_renderAuthBar), users.js
- * (_renderAuthBar), teams.js (inline in _renderAuthBar), stats.html's inline
- * <script> (renderAuthBar).
- *
- * Depends on: nothing required, but uses escHtml from config.js if present
- * (falls back to its own if config.js hasn't loaded yet — e.g. bracket.html
- * previously didn't load config.js at all).
- *
- * CHANGES
- * -------
- * - Phase 12: the mobile Account sheet now includes quick links to
- *   Admin/Users/Courts for admins — the top nav where those links normally
- *   live is hidden below 600px in favor of the bottom-nav bar, which
- *   otherwise gave admins no way to reach those pages on a phone at all.
- * - Phase 13 (UI redesign prep, step 2): added Shell.renderCategoryNav() —
- *   the single shared definition of the "Overview / Fixtures / Results /
- *   Standings / Bracket / Teams registry" tab strip. Previously this exact
- *   six-link row was hand-built, near-identically, five separate times
- *   (tournament.js, fixtures.js, results.js, standings.js, bracket.js) and
- *   not at all in teams.js — meaning a tournament-scoped roster view had no
- *   way back into the tab set. All six now call this one function.
- *
- * Usage on every page, after the pb client exists:
- *   await Shell.injectNav();
- *   Shell.renderAuthBar(pb);
- * =============================================================================
- */
+/**/**
+* =============================================================================
+* shell.js — pb_public/assets/js/shell.js
+*
+* Shared across ALL pages (public + admin). Replaces the per-page duplicated
+* auth-bar renderers previously in: app.js (_renderAuthBar), bracket.js
+* (_bracketRenderAuthBar), courts.js (_renderAuthBar), users.js
+* (_renderAuthBar), teams.js (inline in _renderAuthBar), stats.html's inline
+* <script> (renderAuthBar).
+*
+* Depends on: nothing required, but uses escHtml from config.js if present
+* (falls back to its own if config.js hasn't loaded yet — e.g. bracket.html
+* previously didn't load config.js at all).
+*
+* CHANGES
+* -------
+* - Phase 12: the mobile Account sheet now includes quick links to
+*   Admin/Users/Courts for admins — the top nav where those links normally
+*   live is hidden below 600px in favor of the bottom-nav bar, which
+*   otherwise gave admins no way to reach those pages on a phone at all.
+* - Phase 13 (UI redesign prep, step 2): added Shell.renderCategoryNav() —
+*   the single shared definition of the "Overview / Fixtures / Results /
+*   Standings / Bracket / Teams registry" tab strip. Previously this exact
+*   six-link row was hand-built, near-identically, five separate times
+*   (tournament.js, fixtures.js, results.js, standings.js, bracket.js) and
+*   not at all in teams.js — meaning a tournament-scoped roster view had no
+*   way back into the tab set. All six now call this one function.
+* - Phase 14 (nav reorg): desktop admin links now live inside a single
+*   "⚙ Admin ▾" dropdown (#nav-admin-menu) instead of five separate items
+*   in the top bar. Per-link visibility rules (isAdmin / canScore) are
+*   unchanged — only the wrapper's own visibility and the dropdown
+*   open/close interaction are new. The mobile Account sheet gained a
+*   labeled "ADMINISTRATION" section listing the same five destinations,
+*   so admin/score_inputter users on mobile can still reach them (the
+*   bottom nav itself stays a strict 4 items: Home/Tournaments/Teams/
+*   Account).
+*
+* Usage on every page, after the pb client exists:
+*   await Shell.injectNav();
+*   Shell.renderAuthBar(pb);
+* =============================================================================
+*/
 
 if (typeof escHtml === 'undefined') {
   window.escHtml = function escHtml(str) {
@@ -86,14 +95,21 @@ const Shell = {
     const navManage = document.getElementById('nav-manage');
     if (navManage) navManage.style.display = isAdmin ? '' : 'none';
 
+    // Desktop "⚙ Admin ▾" dropdown wrapper — visible whenever ANY child
+    // link inside it would be visible (admin or score_inputter). The
+    // individual child links above keep deciding their own visibility;
+    // this only controls whether the trigger button itself shows up.
+    const navAdminMenu = document.getElementById('nav-admin-menu');
+    if (navAdminMenu) navAdminMenu.style.display = (isAdmin || canScore) ? '' : 'none';
+
     const ctrl = document.getElementById('auth-controls');
     if (ctrl) {
       if (user) {
         const roleLabel = {
           super_admin      : '⚡ Super Admin',
-          tournament_admin : '✏️ Tournament Admin',
-          score_inputter   : '🖊️ Score Inputter',
-          fan              : '⭐ Fan',
+   tournament_admin : '✏️ Tournament Admin',
+   score_inputter   : '🖊️ Score Inputter',
+   fan              : '⭐ Fan',
         }[user.role] || user.role;
 
         ctrl.innerHTML = `
@@ -127,6 +143,7 @@ const Shell = {
     }
 
     Shell._highlightActiveLink();
+    Shell._bindAdminDropdown();
   },
 
   // ── CATEGORY TAB STRIP ────────────────────────────────────────────────
@@ -175,6 +192,50 @@ const Shell = {
     });
   },
 
+  // ── DESKTOP ADMIN DROPDOWN — open/close interaction ─────────────────────
+  // Delegated on document so it works regardless of when nav.html finished
+  // injecting, and never double-binds across repeated renderAuthBar() calls.
+  _adminDropdownBound: false,
+  _bindAdminDropdown() {
+    if (Shell._adminDropdownBound) return;
+    Shell._adminDropdownBound = true;
+
+    document.addEventListener('click', (e) => {
+      const menu    = document.getElementById('nav-admin-menu');
+      const trigger = e.target.closest('#nav-admin-trigger');
+      if (trigger) {
+        e.preventDefault();
+        const isOpen = menu?.classList.toggle('open');
+        trigger.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        return;
+      }
+      // Click outside the open dropdown closes it.
+      if (menu && menu.classList.contains('open') && !menu.contains(e.target)) {
+        menu.classList.remove('open');
+        document.getElementById('nav-admin-trigger')?.setAttribute('aria-expanded', 'false');
+      }
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== 'Escape') return;
+      const menu = document.getElementById('nav-admin-menu');
+      if (menu?.classList.contains('open')) {
+        menu.classList.remove('open');
+        document.getElementById('nav-admin-trigger')?.setAttribute('aria-expanded', 'false');
+      }
+    });
+
+    // Selecting a dropdown item should close the menu behind it (normal
+    // navigation happens via the link's own href — this just tidies state
+    // for the rare case navigation doesn't unload the page, e.g. same-page
+    // anchors, back/forward cache).
+    document.addEventListener('click', (e) => {
+      if (e.target.closest('.nav-admin-item')) {
+        document.getElementById('nav-admin-menu')?.classList.remove('open');
+      }
+    });
+  },
+
   _showAccountSheet(user, isAdmin, canScore = isAdmin) {
     document.getElementById('_acct-sheet')?.remove();
     const roleLabel = {
@@ -182,46 +243,59 @@ const Shell = {
       score_inputter: '🖊️ Score Inputter', fan: '⭐ Fan',
     }[user?.role] || '';
 
-    // Admin quick-links — the top nav where these normally live is hidden
-    // below 600px in favor of this bottom sheet, so without this an admin
-    // on a phone has no way to reach Admin/Users/Courts at all.
-    const scoreLinkHtml = canScore
-      ? `<a href="scores.html" class="btn sm" style="width:100%;justify-content:flex-start;background:var(--accent-bright);color:#1a1200;border-color:var(--accent-bright);font-weight:700;">⚡ Score Entry</a>`
-      : '';
-    const adminLinksHtml = isAdmin ? `
-    <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:1rem;">
-    ${scoreLinkHtml}
-    <a href="manage.html" class="btn sm ghost" style="width:100%;justify-content:flex-start;">🛠️ Manage tournaments</a>
-    <a href="admin.html" class="btn sm ghost" style="width:100%;justify-content:flex-start;">📋 Admin dashboard</a>
-    <a href="users.html" class="btn sm ghost" style="width:100%;justify-content:flex-start;">👥 Users</a>
-    <a href="courts.html" class="btn sm ghost" style="width:100%;justify-content:flex-start;">🏟️ Courts</a>
-    </div>` : (scoreLinkHtml ? `<div style="margin-bottom:1rem;">${scoreLinkHtml}</div>` : '');
+    // Same five destinations as the desktop "⚙ Admin ▾" dropdown, grouped
+    // under an "ADMINISTRATION" label — this is how an admin or
+    // score_inputter reaches them on mobile, since the bottom nav itself
+    // stays a strict 4 items (Home/Tournaments/Teams/Account) and the top
+    // nav (where the dropdown lives) is hidden below 600px.
+    const adminItems = [];
+    if (isAdmin)  adminItems.push({ href: 'admin.html',   icon: '📋', label: 'Dashboard' });
+    if (canScore) adminItems.push({ href: 'scores.html',  icon: '⚡', label: 'Score Entry' });
+    if (isAdmin)  adminItems.push({ href: 'users.html',   icon: '👥', label: 'Users' });
+    if (isAdmin)  adminItems.push({ href: 'courts.html',  icon: '🏟️', label: 'Courts' });
+    if (isAdmin)  adminItems.push({ href: 'manage.html',  icon: '🛠️', label: 'Manage' });
 
-    const sheet = document.createElement('div');
-    sheet.id = '_acct-sheet';
-    sheet.innerHTML = `
-    <div style="position:fixed;inset:0;z-index:299;background:rgba(0,0,0,0.4);"
-    onclick="document.getElementById('_acct-sheet').remove()"></div>
-    <div style="position:fixed;bottom:60px;left:0;right:0;z-index:300;
-    background:var(--bg-primary);border-top:0.5px solid var(--border-light);
-    border-radius:var(--radius-lg) var(--radius-lg) 0 0;
-    padding:1.25rem 1.5rem 1.5rem;max-width:480px;margin:0 auto;
-    max-height:70vh;overflow-y:auto;">
-    <div style="font-size:14px;font-weight:600;color:var(--text-primary);margin-bottom:4px;">
-    ${escHtml(user?.name || user?.email || '')}
-    </div>
-    <div style="font-size:11px;color:var(--text-tertiary);margin-bottom:1.25rem;">
-    ${escHtml(user?.email || '')}
-    ${roleLabel ? `<span style="margin-left:8px;padding:2px 6px;border-radius:4px;
-      background:var(--bg-secondary);border:0.5px solid var(--border-light);">
-      ${roleLabel}</span>` : ''}
+    const adminSectionHtml = adminItems.length ? `
+    <div class="acct-section-label">Administration</div>
+    <div style="margin-bottom:1rem;">
+    ${adminItems.map(it => `
+      <a href="${it.href}" class="acct-admin-item">
+      <span>${it.icon} ${escHtml(it.label)}</span>
+      <span class="acct-chevron">›</span>
+      </a>`).join('')}
+      </div>` : '';
+
+      const sheet = document.createElement('div');
+      sheet.id = '_acct-sheet';
+      sheet.innerHTML = `
+      <div style="position:fixed;inset:0;z-index:299;background:rgba(0,0,0,0.4);"
+      onclick="document.getElementById('_acct-sheet').remove()"></div>
+      <div style="position:fixed;bottom:60px;left:0;right:0;z-index:300;
+      background:var(--bg-primary);border-top:0.5px solid var(--border-light);
+      border-radius:var(--radius-lg) var(--radius-lg) 0 0;
+      padding:1.25rem 1.5rem 1.5rem;max-width:480px;margin:0 auto;
+      max-height:75vh;overflow-y:auto;">
+      <div class="acct-section-label">Account</div>
+      <div style="font-size:14px;font-weight:600;color:var(--text-primary);margin-bottom:4px;">
+      Signed in as: ${escHtml(user?.name || user?.email || '')}
       </div>
-      ${adminLinksHtml}
-      <button onclick="pb.authStore.clear();window.location.href='login.html';" class="btn sm ghost"
-      style="width:100%;justify-content:center;color:var(--danger);border-color:var(--danger);">
-      Sign out
-      </button>
-      </div>`;
-      document.body.appendChild(sheet);
+      <div style="font-size:11px;color:var(--text-tertiary);margin-bottom:1rem;">
+      ${escHtml(user?.email || '')}
+      ${roleLabel ? `<span style="margin-left:8px;padding:2px 6px;border-radius:4px;
+        background:var(--bg-secondary);border:0.5px solid var(--border-light);">
+        ${roleLabel}</span>` : ''}
+        </div>
+        ${adminSectionHtml}
+        <button onclick="pb.authStore.clear();window.location.href='login.html';" class="btn sm ghost"
+        style="width:100%;justify-content:center;color:var(--danger);border-color:var(--danger);margin-top:${adminItems.length ? '4px' : '0'};">
+        Sign out
+        </button>
+        </div>`;
+        document.body.appendChild(sheet);
   },
 };
+
+// Bind the dropdown interaction as soon as this module loads — it's
+// delegated on document, so it works even before nav.html finishes
+// injecting (the listener just won't find #nav-admin-trigger until then).
+Shell._bindAdminDropdown();
