@@ -48,10 +48,15 @@ if ('serviceWorker' in navigator) {
   <!-- MAIN CONTENT -->
   <div style="max-width:700px;margin:0 auto;padding:0 1rem 3rem;">
 
+    <!-- Category tab strip — only shown when viewing a tournament-scoped
+         roster (?tournament=<id>); the unscoped global registry has no
+         "category" for this to be a tab of. Populated by
+         Shell.renderCategoryNav() in teams.js. -->
+    <div class="btn-row" id="teams-nav" style="margin-bottom:1.25rem;display:none;"></div>
+
     <!-- Roster-scope banner — shown only when ?tournament=<id> is present,
          populated by Teams._renderScopeBanner() in teams.js -->
     <div id="roster-scope-banner" style="display:none;"></div>
-
     <!-- Page heading + add button -->
     <div style="display:flex;align-items:center;justify-content:space-between;
                 padding:1rem 0 0.75rem;flex-wrap:wrap;gap:8px;">

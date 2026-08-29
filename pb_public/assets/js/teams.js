@@ -174,15 +174,21 @@ const Teams = {
   // Banner shown only when viewing a tournament-scoped roster — names the
   // tournament and links back to the full cross-tournament registry.
   _renderScopeBanner() {
-    const el = document.getElementById('roster-scope-banner');
-    if (!el) return;
+    const el    = document.getElementById('roster-scope-banner');
+    const navEl = document.getElementById('teams-nav');
 
     if (!Teams._scopedTournamentId) {
-      el.style.display = 'none';
-      el.innerHTML = '';
+      if (el)    { el.style.display = 'none'; el.innerHTML = ''; }
+      if (navEl) navEl.style.display = 'none';
       return;
     }
 
+    if (navEl) {
+      navEl.style.display = '';
+      Shell.renderCategoryNav('teams-nav', Teams._scopedTournamentId, 'teams');
+    }
+
+    if (!el) return;
     const t     = Teams._scopedTournament;
     const label = t ? (t.event_name || t.name) : 'this tournament';
 

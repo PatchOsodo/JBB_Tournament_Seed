@@ -69,15 +69,7 @@ const ResultsPage = {
     if (t.age_group || t.gender) metaParts.push([t.age_group, t.gender].filter(Boolean).join(' '));
     document.getElementById('res-meta').textContent = metaParts.filter(Boolean).join(' · ');
 
-    document.getElementById('res-nav').innerHTML = `
-      <a class="btn sm ghost" href="tournament.html?id=${id}">Overview</a>
-      <a class="btn sm ghost" href="fixtures.html?id=${id}">Fixtures</a>
-      <span class="btn sm primary" style="pointer-events:none;">Results</span>
-      <a class="btn sm ghost" href="standings.html?id=${id}">Standings</a>
-      <a class="btn sm ghost" href="bracket.html?id=${id}">Bracket</a>
-      <a class="btn sm ghost" href="teams.html?tournament=${id}">Teams registry</a>
-    `;
-  },
+    Shell.renderCategoryNav('res-nav', id, 'results');  },
 
   // Optional round/group narrowing, same interaction as fixtures.html's
   // filter — built from whatever round/group labels actually appear among

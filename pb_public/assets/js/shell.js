@@ -18,6 +18,13 @@
  *   Admin/Users/Courts for admins — the top nav where those links normally
  *   live is hidden below 600px in favor of the bottom-nav bar, which
  *   otherwise gave admins no way to reach those pages on a phone at all.
+ * - Phase 13 (UI redesign prep, step 2): added Shell.renderCategoryNav() —
+ *   the single shared definition of the "Overview / Fixtures / Results /
+ *   Standings / Bracket / Teams registry" tab strip. Previously this exact
+ *   six-link row was hand-built, near-identically, five separate times
+ *   (tournament.js, fixtures.js, results.js, standings.js, bracket.js) and
+ *   not at all in teams.js — meaning a tournament-scoped roster view had no
+ *   way back into the tab set. All six now call this one function.
  *
  * Usage on every page, after the pb client exists:
  *   await Shell.injectNav();
@@ -115,6 +122,39 @@ const Shell = {
     }
 
     Shell._highlightActiveLink();
+  },
+
+  // ── CATEGORY TAB STRIP ────────────────────────────────────────────────
+  // The six links every category-scoped page shares: Overview (the
+  // category's tournament.html?id= page), Fixtures, Results, Standings,
+  // Bracket, and Teams registry (tournament-scoped). One definition here
+  // means the strip only needs restyling in one place — e.g. when this
+  // becomes a real tab shell in the visual redesign — instead of six.
+  CATEGORY_NAV_LINKS: [
+    { key: 'overview',  label: 'Overview',      href: id => `tournament.html?id=${id}` },
+    { key: 'fixtures',  label: 'Fixtures',      href: id => `fixtures.html?id=${id}` },
+    { key: 'results',   label: 'Results',       href: id => `results.html?id=${id}` },
+    { key: 'standings', label: 'Standings',     href: id => `standings.html?id=${id}` },
+    { key: 'bracket',   label: 'Bracket',       href: id => `bracket.html?id=${id}` },
+    { key: 'teams',     label: 'Teams registry',href: id => `teams.html?tournament=${id}` },
+  ],
+
+  // containerId — each page keeps its own existing container element
+  // (#tourn-nav, #fx-nav, #res-nav, #st-nav, #bracket-nav, #teams-nav), so
+  // no HTML restructuring is needed anywhere this is called from.
+  // tournamentId — the category's `tournaments` record id.
+  // activeKey — which CATEGORY_NAV_LINKS entry is the current page; it
+  // renders as a non-link "primary" pill instead of an <a>, same visual
+  // treatment every page already used individually.
+  renderCategoryNav(containerId, tournamentId, activeKey) {
+    const el = document.getElementById(containerId);
+    if (!el) return;
+    el.innerHTML = Shell.CATEGORY_NAV_LINKS.map(link => {
+      if (link.key === activeKey) {
+        return `<span class="btn sm primary" style="pointer-events:none;">${escHtml(link.label)}</span>`;
+      }
+      return `<a class="btn sm ghost" href="${link.href(tournamentId)}">${escHtml(link.label)}</a>`;
+    }).join('');
   },
 
   _highlightActiveLink() {

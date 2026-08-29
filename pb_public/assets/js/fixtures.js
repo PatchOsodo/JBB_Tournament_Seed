@@ -65,14 +65,7 @@ const FixturesPage = {
     if (t.age_group || t.gender) metaParts.push([t.age_group, t.gender].filter(Boolean).join(' '));
     document.getElementById('fx-meta').textContent = metaParts.filter(Boolean).join(' · ');
 
-    document.getElementById('fx-nav').innerHTML = `
-      <a class="btn sm ghost" href="tournament.html?id=${id}">Overview</a>
-      <span class="btn sm primary" style="pointer-events:none;">Fixtures</span>
-      <a class="btn sm ghost" href="results.html?id=${id}">Results</a>
-      <a class="btn sm ghost" href="standings.html?id=${id}">Standings</a>
-      <a class="btn sm ghost" href="bracket.html?id=${id}">Bracket</a>
-      <a class="btn sm ghost" href="teams.html?tournament=${id}">Teams registry</a>
-    `;
+    Shell.renderCategoryNav('fx-nav', id, 'fixtures');
   },
 
   // Groups fixtures into ordered sections — one per group_name for group

@@ -208,17 +208,8 @@ const BracketPage = {
   // standings.html — closes the loop so every tournament detail page links
   // to every other one consistently. Bracket rendering itself (below) is
   // completely untouched.
-  _renderNav(id) {
-    const el = document.getElementById('bracket-nav');
-    if (!el) return;
-    el.innerHTML = `
-    <a class="btn sm ghost" href="tournament.html?id=${id}">Overview</a>
-    <a class="btn sm ghost" href="fixtures.html?id=${id}">Fixtures</a>
-    <a class="btn sm ghost" href="results.html?id=${id}">Results</a>
-    <a class="btn sm ghost" href="standings.html?id=${id}">Standings</a>
-    <span class="btn sm primary" style="pointer-events:none;">Bracket</span>
-    <a class="btn sm ghost" href="teams.html?tournament=${id}">Teams registry</a>
-    `;
+ _renderNav(id) {
+    Shell.renderCategoryNav('bracket-nav', id, 'bracket');
   },
 
   _renderBracket() {

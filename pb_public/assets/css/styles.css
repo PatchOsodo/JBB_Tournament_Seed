@@ -225,12 +225,12 @@ input, button, select, textarea {
 }
 
 .hero-cta-primary {
-  background : #e8b82a;
+  background : var(--secondary);
   color      : #0a2210;
   border     : none;
   font-weight: 600;
 }
-.hero-cta-primary:hover { background: #f5d98a; }
+.hero-cta-primary:hover { background: var(--secondary-dark); }
 
 .hero-cta-secondary {
   background      : transparent;
@@ -363,7 +363,7 @@ input, button, select, textarea {
 }
 .upcoming-games-grid {
   display               : grid;
-  grid-template-columns : repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns : repeat(auto-fit, minmax(70vw, 1fr));
   gap                    : 10px;
   margin-bottom          : 1.5rem;
 }
@@ -2479,13 +2479,23 @@ flex-shrink: 0;
  *  PUBLIC REFINEMENT — PHASE 2: FEATURED TOURNAMENT CARD
  *  ============================================================================= */
 .featured-tournament-card {
-  background    : linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%);
-  border-radius : var(--radius-xl);
-  padding       : 1.5rem;
-  margin-bottom : 1.5rem;
-  color         : #fff;
-  text-align    : center;
+  position            : relative;
+  background          : linear-gradient(135deg, #0a2410 0%, #123018 100%); /* fixed, theme-independent */
+  background-size     : cover;
+  background-position : center;
+  overflow            : hidden;
+  border-radius       : var(--radius-xl);
+  padding             : 1rem;
+  margin-bottom       : 1rem;
+  color               : #fff;
+  text-align          : center;
 }
+.featured-tournament-card.has-banner::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgba(10,24,16,.45) 0%, rgba(10,24,16,.88) 100%);
+}
+.featured-tournament-card > * { position: relative; z-index: 1; }
 .featured-tournament-eyebrow {
   font-size      : 11px;
   font-weight    : 700;
@@ -2522,14 +2532,14 @@ flex-shrink: 0;
 }
 .featured-tournament-cta {
   background  : #fff;
-  color       : var(--accent-dark);
+  color       : #0a2410;
   border      : none;
   font-weight : 700;
 }
 .featured-tournament-cta:hover { opacity: 0.9; }
 
 @media (max-width: 480px) {
-  .featured-tournament-card  { padding: 1.25rem 1rem; }
+  .featured-tournament-card  { padding: 0.75rem 0.6rem; }
   .featured-tournament-stats { gap: 18px; }
 }
 
@@ -2554,7 +2564,7 @@ flex-shrink: 0;
 .upcoming-game-card {
   flex          : 0 0 auto;
   scroll-snap-align: start;
-  width         : 220px;
+  width         : 70vw;
   background    : var(--bg-primary);
   border        : 0.5px solid var(--border-light);
   border-radius : var(--radius-lg);

@@ -114,6 +114,11 @@ const App = {
     : `tournament.html?event=${encodeURIComponent(displayName)}`;
     const statusLabel = active.length ? 'Ongoing' : 'Coming up';
 
+    const bannerOwner = bestGroup.find(t => t.banner_image) || null;
+    const bannerStyle = bannerOwner
+    ? `style="background-image:url('${pb.files.getURL(bannerOwner, bannerOwner.banner_image, { thumb: '1200x360' })}')"`
+    : '';
+
     el.innerHTML = `
     <div class="featured-tournament-card">
     <div class="featured-tournament-eyebrow">${escHtml(statusLabel)}</div>

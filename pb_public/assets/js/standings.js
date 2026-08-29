@@ -141,15 +141,7 @@ const StandingsPage = {
     if (t.age_group || t.gender) metaParts.push([t.age_group, t.gender].filter(Boolean).join(' '));
     document.getElementById('st-meta').textContent = metaParts.filter(Boolean).join(' · ');
 
-    document.getElementById('st-nav').innerHTML = `
-      <a class="btn sm ghost" href="tournament.html?id=${id}">Overview</a>
-      <a class="btn sm ghost" href="fixtures.html?id=${id}">Fixtures</a>
-      <a class="btn sm ghost" href="results.html?id=${id}">Results</a>
-      <span class="btn sm primary" style="pointer-events:none;">Standings</span>
-      <a class="btn sm ghost" href="bracket.html?id=${id}">Bracket</a>
-      <a class="btn sm ghost" href="teams.html?tournament=${id}">Teams registry</a>
-    `;
-  },
+    Shell.renderCategoryNav('st-nav', id, 'standings');  },
 
   _renderTables() {
     const wrap = document.getElementById('st-tables');

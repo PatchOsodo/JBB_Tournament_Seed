@@ -111,16 +111,8 @@ const TournamentPage = {
   },
 
   _renderNav(id) {
-    document.getElementById('tourn-nav').innerHTML = `
-    <span class="btn sm primary" style="pointer-events:none;">Overview</span>
-    <a class="btn sm ghost" href="fixtures.html?id=${id}">Fixtures</a>
-    <a class="btn sm ghost" href="results.html?id=${id}">Results</a>
-    <a class="btn sm ghost" href="standings.html?id=${id}">Standings</a>
-    <a class="btn sm ghost" href="bracket.html?id=${id}">Bracket</a>
-    <a class="btn sm ghost" href="teams.html?tournament=${id}">Teams registry</a>
-    `;
+    Shell.renderCategoryNav('tourn-nav', id, 'overview');
   },
-
   _renderStats(teamsCount) {
     const fx     = TournamentPage.fixtures.filter(f => !f.is_bye);
     const played = fx.filter(f => f.status === 'completed').length;
