@@ -124,7 +124,7 @@ const TournamentsPage = {
   _card(g) {
     const bannerHtml = g.bannerOwner
       ? `<img class="tournament-card-banner" src="${pb.files.getURL(g.bannerOwner, g.bannerOwner.banner_image, { thumb: '800x300' })}" alt="">`
-      : `<div class="tournament-card-banner tournament-card-banner-placeholder"><span>🏀</span></div>`;
+      : `<div class="tournament-card-banner tournament-card-banner-placeholder"><span></span></div>`;
 
     const MAX_BADGES = 3;
     const shown = g.ageGroups.slice(0, MAX_BADGES);

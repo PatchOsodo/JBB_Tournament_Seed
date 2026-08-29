@@ -451,12 +451,15 @@ input, button, select, textarea {
   background : var(--bg-tertiary);
 }
 .tournament-card-banner-placeholder {
+  --card-placeholder-image : url('../img/tourn-bg.jpg');
   display        : flex;
   flex-direction : column;
   align-items    : center;
   justify-content: center;
   gap            : 4px;
-  background     : linear-gradient(135deg, var(--accent, #1a5c28) 0%, var(--secondary, #d4a017) 100%);
+  background     :
+    linear-gradient(135deg, rgba(26,92,40,0.72) 0%, rgba(212,160,23,0.60) 100%),
+    var(--card-placeholder-image) center / cover no-repeat;
   font-size      : 30px;
 }
 .tournament-card-banner-placeholder .placeholder-cat {
