@@ -2617,7 +2617,7 @@ flex-shrink: 0;
 }
 
 @media (max-width: 480px) {
-  .upcoming-game-card { width: 190px; }
+  .upcoming-game-card { width: 90vw; }
 }
 
 /* =============================================================================
