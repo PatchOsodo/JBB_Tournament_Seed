@@ -109,11 +109,16 @@ const DB = {
     });
   },
 
-  async uploadTournamentBanner(tournamentId, file) {
+   async uploadTournamentBanner(tournamentId, file) {
     const formData = new FormData();
     formData.append('banner_image', file);
     Logger.info('DB.uploadTournamentBanner', { tournamentId, fileName: file.name });
     return pb.collection('tournaments').update(tournamentId, formData);
+  },
+
+  async clearTournamentBanner(tournamentId) {
+    Logger.info('DB.clearTournamentBanner', { tournamentId });
+    return pb.collection('tournaments').update(tournamentId, { banner_image: '' });
   },
 
   async updateTournament(id, data) {

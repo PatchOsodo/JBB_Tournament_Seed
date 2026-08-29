@@ -1221,6 +1221,81 @@ const App = {
     }
   },
 
+  // Banner editor — same reveal/edit-row pattern as _deadlineEditor, and
+  // rendered in the same two places: the pending-tournament roster screen
+  // (_renderRosterScreen) and the always-available Manage Teams modal
+  // (_renderManageTeamsList), so a banner can be added or changed at any
+  // point in a tournament's lifecycle, not only at creation time.
+  _bannerEditor(tournament) {
+    if (!Auth.isAdmin()) return '';
+
+    const hasImage = !!tournament.banner_image;
+    const thumbUrl = hasImage
+    ? pb.files.getURL(tournament, tournament.banner_image, { thumb: '800x300' })
+    : null;
+
+    return `
+    <div style="margin-bottom:0.75rem;padding:6px 10px;background:var(--bg-secondary);border-radius:var(--radius-md);">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
+    <div style="display:flex;align-items:center;gap:8px;">
+    ${thumbUrl
+      ? `<img src="${thumbUrl}" alt="" style="width:96px;height:36px;object-fit:cover;border-radius:4px;border:0.5px solid var(--border-light);">`
+      : `<span style="font-size:12px;color:var(--text-tertiary);">No banner image set</span>`}
+      </div>
+      <button class="btn sm ghost" onclick="App._toggleBannerEdit()">${hasImage ? 'Change banner' : 'Add banner'}</button>
+      </div>
+      <div id="banner-edit-row" style="display:none;margin-top:8px;">
+      <input type="file" id="banner-edit-input" accept="image/png,image/jpeg,image/webp" class="tournament-name-input" style="margin-bottom:8px;">
+      <div style="display:flex;gap:6px;">
+      <button class="btn sm primary" style="flex:1;" onclick="App.saveBanner('${tournament.id}')">Upload</button>
+      ${hasImage ? `<button class="btn sm ghost" onclick="App.saveBanner('${tournament.id}', true)">Remove banner</button>` : ''}
+      </div>
+      <div id="banner-edit-error" style="font-size:11px;color:var(--text-error);margin-top:6px;display:none;"></div>
+      </div>
+      </div>`;
+  },
+
+  _toggleBannerEdit() {
+    const row = document.getElementById('banner-edit-row');
+    if (row) row.style.display = row.style.display === 'none' ? 'block' : 'none';
+  },
+
+  async saveBanner(tournamentId, clear = false) {
+    const errEl = document.getElementById('banner-edit-error');
+    if (errEl) errEl.style.display = 'none';
+
+    try {
+      if (clear) {
+        await DB.clearTournamentBanner(tournamentId);
+      } else {
+        const inputEl = document.getElementById('banner-edit-input');
+        const file = inputEl?.files?.[0];
+        if (!file) {
+          if (errEl) { errEl.textContent = 'Choose an image first.'; errEl.style.display = 'block'; }
+          return;
+        }
+        await DB.uploadTournamentBanner(tournamentId, file);
+      }
+
+      Logger.info('saveBanner', { tournamentId, clear });
+
+      const refreshed = await pb.collection('tournaments').getOne(tournamentId);
+      State.activeTournament = refreshed;
+
+      if (document.getElementById('screen-names')?.classList.contains('active')) {
+        await App._renderRosterScreen(refreshed);
+      } else if (State.fixtures?.length) {
+        await App._renderManageTeamsList();
+      }
+    } catch (e) {
+      Logger.error('saveBanner failed', { error: e.message });
+      if (errEl) {
+        errEl.textContent = `Couldn't save: ${e.message}`;
+        errEl.style.display = 'block';
+      }
+    }
+  },
+
   // Roster/format/pool-assignment/preview screen. Layout order:
   //   Row 1: deadline editor (left) | Format picker + pool count (right)
   //   Row 2: pool assignment (left) | matchup preview (right)
@@ -1248,9 +1323,8 @@ const App = {
 
     grid.innerHTML = `
     <div class="pool-assignment-row" style="margin-bottom:1.5rem;">
-    <div>${App._deadlineEditor(tournament)}</div>
-    <div>
-    <div style="font-size:13px;font-weight:600;margin-bottom:8px;">Format</div>
+    <div>${App._deadlineEditor(tournament)}${App._bannerEditor(tournament)}</div>
+    <div>    <div style="font-size:13px;font-weight:600;margin-bottom:8px;">Format</div>
     <div id="roster-format-grid" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;"></div>
     <div id="roster-pool-size-row" style="display:none;margin-bottom:10px;">
     <label style="font-size:12px;color:var(--text-secondary);display:block;margin-bottom:4px;">
@@ -1626,6 +1700,9 @@ const App = {
 
     const deadlineEl = document.getElementById('manage-teams-deadline');
     if (deadlineEl) deadlineEl.innerHTML = App._deadlineEditor(tournament);
+
+    const bannerEl = document.getElementById('manage-teams-banner');
+    if (bannerEl) bannerEl.innerHTML = App._bannerEditor(tournament);
 
     const listEl = document.getElementById('manage-teams-list');
     listEl.innerHTML = teams.map(t => `
