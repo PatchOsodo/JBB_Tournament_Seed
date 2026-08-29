@@ -185,7 +185,6 @@ const Shell = {
     // Admin quick-links — the top nav where these normally live is hidden
     // below 600px in favor of this bottom sheet, so without this an admin
     // on a phone has no way to reach Admin/Users/Courts at all.
-    const canScore = isAdmin || user?.role === 'score_inputter';
     const scoreLinkHtml = canScore
       ? `<a href="scores.html" class="btn sm" style="width:100%;justify-content:flex-start;background:var(--accent-bright);color:#1a1200;border-color:var(--accent-bright);font-weight:700;">⚡ Score Entry</a>`
       : '';
