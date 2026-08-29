@@ -2568,7 +2568,7 @@ flex-shrink: 0;
 .upcoming-game-card {
   flex          : 0 0 auto;
   scroll-snap-align: start;
-  width         : 70vw;
+  width         : 450px;
   background    : var(--bg-primary);
   border        : 0.5px solid var(--border-light);
   border-radius : var(--radius-lg);
