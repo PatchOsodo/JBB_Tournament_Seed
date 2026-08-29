@@ -83,6 +83,8 @@ const Shell = {
     if (navAdmin) navAdmin.style.display = isAdmin ? '' : 'none';
     const navScores = document.getElementById('nav-scores');
     if (navScores) navScores.style.display = canScore ? '' : 'none';
+    const navManage = document.getElementById('nav-manage');
+    if (navManage) navManage.style.display = isAdmin ? '' : 'none';
 
     const ctrl = document.getElementById('auth-controls');
     if (ctrl) {
@@ -190,6 +192,7 @@ const Shell = {
     const adminLinksHtml = isAdmin ? `
     <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:1rem;">
     ${scoreLinkHtml}
+    <a href="manage.html" class="btn sm ghost" style="width:100%;justify-content:flex-start;">🛠️ Manage tournaments</a>
     <a href="admin.html" class="btn sm ghost" style="width:100%;justify-content:flex-start;">📋 Admin dashboard</a>
     <a href="users.html" class="btn sm ghost" style="width:100%;justify-content:flex-start;">👥 Users</a>
     <a href="courts.html" class="btn sm ghost" style="width:100%;justify-content:flex-start;">🏟️ Courts</a>

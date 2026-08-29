@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Manage Tournaments — Junior Ballers 254</title>
+<link rel="icon" type="image/x-icon" href="assets/img/favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/img/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/img/favicon-192.png">
+<link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/styles.css?v=3.2.0">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1a5c28">
+<meta name="robots" content="noindex, nofollow">
+</head>
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('assets/js/sw.js').catch(console.warn);
+}
+</script>
+<body>
+
+<div class="page-wrapper">
+<div class="app">
+
+  <div class="app-header">
+    <div>
+      <h1>🛠️ Manage Tournaments</h1>
+      <p>Create categories, manage rosters, generate fixtures</p>
+    </div>
+    <a href="admin.html" class="btn sm ghost">📋 Admin dashboard</a>
+  </div>
+
+  <div class="empty-state" id="not-admin-notice" style="display:none;">
+    <span class="empty-icon">🔒</span>
+    This page is only available to tournament admins.
+  </div>
+
+  <div id="manage-app" style="display:none;">
+
+    <!-- ===================================================================
+         SCREEN: LIST — every tournament, admin actions only
+         =================================================================== -->
+    <div class="screen active" id="screen-manage-home">
+      <div class="section-heading-row">
+        <p class="section-label" style="margin:0">All tournaments</p>
+        <div class="admin-toolbar">
+          <button class="btn sm ghost" onclick="Manage.openOrganiseModal()">Organise events</button>
+          <button class="btn primary sm" onclick="Manage.goToSetup()">+ New tournament</button>
+        </div>
+      </div>
+
+      <div class="success-banner" id="manage-list-success"><span class="banner-icon">✓</span><span id="manage-list-success-msg"></span></div>
+      <div class="error-banner" id="manage-list-error"><span class="banner-icon">!</span><span id="manage-list-error-msg"></span></div>
+
+      <div id="manage-list">
+        <div class="skeleton-card"></div>
+        <div class="skeleton-card"></div>
+      </div>
+    </div>
+
+    <!-- ===================================================================
+         SCREEN: SETUP — create category/categories under an event
+         =================================================================== -->
+    <div class="screen" id="screen-manage-setup">
+      <p class="section-label">New tournament</p>
+      <div class="card">
+        <label style="font-size:13px;color:var(--text-secondary);display:block;margin-bottom:6px;">Tournament Details</label>
+        <div style="display:grid;grid-template-columns:1fr auto;gap:8px;margin-bottom:0.5rem;">
+          <input type="text" id="event-series" class="tournament-name-input" placeholder="Name e.g. Junior Ballers Bash"
+                 maxlength="40" style="margin-bottom:0;" list="event-series-suggestions" autocomplete="off" />
+          <datalist id="event-series-suggestions"></datalist>
+          <input type="text" id="event-edition" class="tournament-name-input" placeholder="Edition e.g 6.0"
+                 maxlength="20" style="margin-bottom:0;width:150px;" />
+        </div>
+        <div id="tournament-name-preview" style="font-size:11px;color:var(--text-tertiary);margin-bottom:1rem;min-height:16px;"></div>
+
+        <div style="margin-bottom:0.5rem;">
+          <label style="font-size:13px;color:var(--text-secondary);display:block;margin-bottom:6px;">
+            Categories
+            <span style="font-size:11px;color:var(--text-tertiary);font-style:italic;"> — one row per age group + gender</span>
+          </label>
+        </div>
+        <div id="categories-list"></div>
+        <button type="button" class="btn ghost" onclick="Manage.addCategoryRow()" style="width:100%;margin-bottom:1rem;">+ Add category</button>
+
+        <div style="margin-bottom:1rem;">
+          <label for="registration-deadline" style="font-size:13px;color:var(--text-secondary);display:block;margin-bottom:6px;">
+            Registration deadline <span style="font-size:11px;color:var(--text-tertiary);font-style:italic;">— optional</span>
+          </label>
+          <input type="date" id="registration-deadline" class="tournament-name-input" style="margin-bottom:0;" />
+        </div>
+
+        <div style="margin-bottom:1rem;">
+          <label for="tournament-banner" style="font-size:13px;color:var(--text-secondary);display:block;margin-bottom:6px;">
+            Banner image <span style="font-size:11px;color:var(--text-tertiary);font-style:italic;">— optional</span>
+          </label>
+          <input type="file" id="tournament-banner" accept="image/png,image/jpeg,image/webp" class="tournament-name-input" style="margin-bottom:0;" />
+        </div>
+
+        <div class="error-banner" id="setup-error"><span class="banner-icon">!</span><span id="setup-error-msg"></span></div>
+
+        <div class="btn-row">
+          <button class="btn" onclick="Manage.goToList()">← Back</button>
+          <button class="btn primary" onclick="Manage.goToNames()">Create categories →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================================================================
+         SCREEN: ROSTER — teams, format, pools, generate fixtures
+         =================================================================== -->
+    <div class="screen" id="screen-manage-names">
+      <p class="section-label">Manage roster</p>
+      <div class="card">
+        <div id="category-progress" style="font-size:12px;color:var(--accent);font-weight:600;margin-bottom:0.5rem;"></div>
+        <div class="error-banner" id="names-error"><span class="banner-icon">!</span><span id="names-error-msg"></span></div>
+        <div class="team-inputs-grid" id="team-inputs"></div>
+        <div class="btn-row">
+          <button class="btn" onclick="Manage.goToList()">← Back</button>
+          <button class="btn primary" id="btn-generate-roster" onclick="Manage.generateFixturesForRoster()">Generate fixtures →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================================================================
+         SCREEN: HUB — post-generation admin actions (view = public pages)
+         =================================================================== -->
+    <div class="screen" id="screen-manage-hub">
+      <div class="schedule-header">
+        <div>
+          <div class="schedule-title" id="hub-title"></div>
+          <div class="schedule-meta" id="hub-meta"></div>
+        </div>
+        <div class="tournament-hub-actions">
+          <span class="status-badge badge-pending" id="hub-status">—</span>
+          <button class="btn sm" onclick="Manage.goToList()">← All tournaments</button>
+        </div>
+      </div>
+
+      <div class="success-banner" id="hub-success"><span class="banner-icon">✓</span><span id="hub-success-msg"></span></div>
+      <div class="error-banner" id="hub-error"><span class="banner-icon">!</span><span id="hub-error-msg"></span></div>
+
+      <div id="hub-deadline"></div>
+      <div id="hub-banner" style="margin-top:0.75rem;"></div>
+
+      <div class="stats-row" id="hub-stats-row" style="margin-top:1rem;"></div>
+
+      <div class="btn-row" id="hub-links" style="margin:1rem 0;"></div>
+
+      <div class="admin-toolbar" style="margin-bottom:1rem;">
+        <button class="btn sm ghost" onclick="Manage.openManageTeamsModal()">👥 Manage teams</button>
+        <button class="btn sm ghost" id="btn-hub-regenerate" onclick="Manage.regenerateFixtures()">↺ Regenerate fixtures</button>
+        <button class="btn sm ghost" id="btn-hub-results" onclick="Manage.openResultsModal()" style="display:none;">📄 Results</button>
+      </div>
+    </div>
+
+  </div><!-- /#manage-app -->
+</div><!-- /.app -->
+</div><!-- /.page-wrapper -->
+
+<!-- Manage teams modal -->
+<div class="modal-overlay" id="manage-teams-overlay">
+  <div class="modal">
+    <h2>Manage teams</h2>
+    <div class="error-banner" id="manage-teams-error"><span id="manage-teams-error-msg"></span></div>
+    <div id="manage-teams-list" style="max-height:240px;overflow-y:auto;margin-bottom:1rem;"></div>
+    <div style="display:flex;gap:8px;">
+      <select id="manage-teams-add-select" class="tournament-name-input" style="margin-bottom:0;flex:1;">
+        <option value="">Add a registered team…</option>
+      </select>
+      <button class="btn sm primary" onclick="Manage.addManagedTeam()">+ Add</button>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:1.25rem;">
+      <button class="btn ghost" style="flex:1;" onclick="Manage.closeManageTeamsModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Results modal -->
+<div class="modal-overlay" id="results-overlay">
+  <div class="modal">
+    <h2>Results</h2>
+    <p style="font-size:12px;color:var(--text-tertiary);margin-bottom:1rem;">Standings and every match result, ready to download or share.</p>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:1rem;">
+      <button class="btn primary" style="width:100%;" onclick="Manage.downloadResultsHTML()">📄 Download as report (HTML)</button>
+      <button class="btn ghost" style="width:100%;" onclick="Manage.downloadResultsCSV()">📊 Download as spreadsheet (CSV)</button>
+      <button class="btn ghost" style="width:100%;" onclick="Manage.emailResults()">✉ Open in email</button>
+    </div>
+    <button class="btn ghost" style="width:100%;" onclick="Manage.closeResultsModal()">Close</button>
+  </div>
+</div>
+
+<!-- Organise events modal -->
+<div id="organise-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:200;overflow-y:auto;padding:1rem;" onclick="Manage.closeOrganiseModal(event)">
+  <div style="background:var(--bg-primary);border-radius:var(--radius-lg);max-width:560px;margin:2rem auto;padding:1.5rem;border:0.5px solid var(--border-light);" onclick="event.stopPropagation()">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;">
+      <h2 style="font-size:16px;font-weight:600;margin:0;">Organise into events</h2>
+      <button class="btn sm ghost" onclick="Manage.closeOrganiseModal()">✕</button>
+    </div>
+    <p style="font-size:13px;color:var(--text-secondary);margin-bottom:1.25rem;">Assign an event name to group tournaments together. Leave blank to keep standalone.</p>
+    <div id="organise-list" style="display:grid;gap:8px;margin-bottom:1.25rem;"><div style="color:var(--text-tertiary);font-size:13px;">Loading...</div></div>
+    <div id="organise-error" style="display:none;color:var(--danger);font-size:12px;margin-bottom:0.75rem;"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;">
+      <button class="btn sm ghost" onclick="Manage.closeOrganiseModal()">Cancel</button>
+      <button class="btn sm primary" id="btn-save-organise" onclick="Manage.saveOrganise()">Save changes</button>
+    </div>
+  </div>
+</div>
+
+<script src="assets/js/pocketbase.umd.js"></script>
+<script src="assets/js/shell.js"></script>
+<script src="assets/js/config.js"></script>
+<script src="assets/js/logger.js"></script>
+<script src="assets/js/auth.js"></script>
+<script src="assets/js/state.js"></script>
+<script src="assets/js/generators.js"></script>
+<script src="assets/js/events.js"></script>
+<script src="assets/js/db.js"></script>
+<script src="assets/js/manage.js"></script>
+</body>
+</html>
