@@ -80,6 +80,12 @@
   /* Typography */
   --font          : 'Nunito', 'Segoe UI', system-ui, -apple-system, sans-serif;
   --font-mono     : 'Cascadia Code', 'Consolas', 'Courier New', monospace;
+
+  /* Surface levels — light mode: subtle off-white steps */
+  --surface-0     : var(--bg-tertiary);   /* page canvas */
+  --surface-1     : var(--bg-primary);    /* cards/sections */
+  --surface-2     : #ffffff;              /* featured/hero content surface */
+  --surface-2-border: rgba(212,160,23,0.35); /* gold accent edge */
 }
 
 @media (prefers-color-scheme: dark) {
@@ -108,6 +114,12 @@
     --accent-dark   : #d4a017;
     --secondary     : #2a7a38;
     --secondary-dark: #3d9448;
+
+    /* Surface levels — dark mode: JB254 green depth steps */
+    --surface-0     : #082a12;   /* page canvas — deepest */
+    --surface-1     : #123018;   /* cards/sections — offset */
+    --surface-2     : #16401f;   /* featured/hero — highest contrast */
+    --surface-2-border: rgba(232,184,42,0.4);
   }
 }
 
@@ -124,7 +136,7 @@ html { scroll-behavior: smooth; }
 
 body {
   font-family : var(--font);
-  background  : var(--bg-tertiary);
+  background  : var(--surface-0);
   color       : var(--text-primary);
   min-height  : 100vh;
   line-height : 1.5;
@@ -184,14 +196,20 @@ input, button, select, textarea {
   gap         : 8px;
 }
 
-.hero-section {
-  position      : relative;
-  background    : linear-gradient(160deg, rgba(6,23,16,0.92) 0%, rgba(13,61,26,0.80) 55%, rgba(8,79,57,0.72) 100%),
-  url('../img/hero-bg.jpg') center / cover no-repeat;
-  border-radius : var(--radius-xl);
-  padding       : 2rem 1.5rem;
-  margin-bottom : 1.5rem;
-  text-align    : center;
+.featured-tournament-card {
+  position            : relative;
+  background          : linear-gradient(135deg, #0a2410 0%, #123018 100%); /* fixed, theme-independent */
+  background-size     : cover;
+  background-position : center;
+  overflow            : hidden;
+  border-radius       : var(--radius-xl);
+  border              : 1px solid var(--surface-2-border);
+  box-shadow          : 0 0 0 1px rgba(232,184,42,0.08), 0 12px 32px rgba(0,0,0,0.28);
+  padding             : 1.5rem 1rem;
+  margin-top          : 1.875rem;
+  margin-bottom       : 1.875rem;
+  color               : #fff;
+  text-align          : center;
 }
 .hero-pretitle {
   font-size      : 12px;
@@ -2501,12 +2519,25 @@ flex-shrink: 0;
 }
 .featured-tournament-card > * { position: relative; z-index: 1; }
 .featured-tournament-eyebrow {
+  display        : inline-flex;
+  align-items    : center;
+  gap            : 6px;
   font-size      : 11px;
   font-weight    : 700;
   text-transform : uppercase;
   letter-spacing : 0.1em;
-  opacity        : 0.75;
-  margin-bottom  : 6px;
+  opacity        : 0.9;
+  margin-bottom  : 8px;
+  color          : var(--accent-bright);
+}
+.featured-tournament-eyebrow::before {
+  content       : '';
+  display       : inline-block;
+  width         : 6px;
+  height        : 6px;
+  border-radius : 50%;
+  background    : currentColor;
+  animation     : pulse-glow 1.6s ease-in-out infinite;
 }
 .featured-tournament-name {
   font-size     : 22px;
@@ -2625,12 +2656,19 @@ flex-shrink: 0;
  *  ============================================================================= */
 .other-active-rail {
   display                    : flex;
-  gap                        : 10px;
+  gap                        : 8px;
   overflow-x                 : auto;
-  padding-bottom             : 4px;
+  padding-bottom             : 2px;
   margin-bottom              : 1.5rem;
   scroll-snap-type           : x proximity;
   -webkit-overflow-scrolling : touch;
+}
+/* When there's only 1–2 cards, the rail shouldn't stretch full-width and
+   read as an empty section — let it size to content instead. */
+.other-active-rail:has(> :nth-child(-n+2):last-child) {
+  flex-wrap : nowrap;
+  width     : fit-content;
+  max-width : 100%;
 }
 .other-active-rail::-webkit-scrollbar { height: 5px; }
 .other-active-rail::-webkit-scrollbar-thumb {
@@ -2719,7 +2757,8 @@ flex-shrink: 0;
   font-weight : 700;
   color       : var(--text-primary);
 }
-.result-winner .score-display-md { color: var(--accent); }
+.result-winner .score-display-md { color: var(--accent-bright); }
+.result-winner .result-team-score { color: var(--accent-bright); }
 .result-card .score-display-md:not(.result-winner .score-display-md) { color: var(--text-tertiary); }
 .result-final-tag {
   font-size      : 10px;
@@ -2765,7 +2804,19 @@ flex-shrink: 0;
   padding    : 6px;
   border-bottom: 0.5px solid var(--border-light);
 }
-.standings-preview-rank { color: var(--text-tertiary); font-weight: 600; width: 20px; }
+.standings-preview-rank {
+  color         : var(--text-tertiary);
+  font-weight   : 700;
+  width         : 22px;
+  display       : inline-flex;
+  align-items   : center;
+  justify-content: center;
+  height        : 20px;
+  border-radius : 50%;
+}
+.standings-preview-rank.rank-1 { background: #fef3c7; color: #f59e0b; }
+.standings-preview-rank.rank-2 { background: #f1f5f9; color: #94a3b8; }
+.standings-preview-rank.rank-3 { background: #fef3c7; color: #b45309; }
 .standings-preview-num  { text-align: center; }
 .standings-preview-wins { color: var(--accent); font-weight: 700; }
 .standings-preview-link {
@@ -2791,7 +2842,7 @@ flex-shrink: 0;
 /* Give each status bucket's heading breathing room from the section
  a bove it — .section-heading already has its *own bottom margin, this
  just adds top spacing between consecutive buckets. */
-.section-heading { margin-top: 1.5rem; }
+.section-heading { margin-top: 1.875rem; margin-bottom: 0.9375rem; }
 .section-heading:first-child { margin-top: 0; }
 
 /* =============================================================================
@@ -3015,3 +3066,130 @@ white-space : nowrap;
   margin-top    : 4px;
   width         : fit-content;
 }
+.directory-gateway-card {
+  text-align    : center;
+  padding       : 2.25rem 1.25rem;
+  background    : var(--surface-1);
+  border        : 1px solid var(--surface-2-border);
+  border-radius : var(--radius-lg);
+  box-shadow    : 0 4px 20px rgba(0,0,0,0.12);
+}
+/* =============================================================================
+ *  SCOREKEEPER — QUICK SCORE ENTRY (operator-only, never shown to guests)
+ *  ============================================================================= */
+.quick-score-btn {
+  display       : inline-flex;
+  align-items   : center;
+  gap           : 6px;
+  padding       : 6px 14px;
+  font-size     : 12px;
+  font-weight   : 700;
+  color         : #1a1200;
+  background    : var(--accent-bright, #e8b82a);
+  border        : none;
+  border-radius : 999px;
+  cursor        : pointer;
+  box-shadow    : 0 2px 10px rgba(232,184,42,0.35);
+  transition    : transform 0.1s, box-shadow 0.15s;
+}
+.quick-score-btn:hover  { box-shadow: 0 4px 16px rgba(232,184,42,0.5); }
+.quick-score-btn:active { transform: scale(0.97); }
+
+#score-entry-modal.modal-overlay .modal {
+max-width : 420px;
+}
+.qs-step-row {
+  display   : flex;
+  flex-direction : column;
+  gap       : 10px;
+  margin-bottom : 1rem;
+}
+.qs-filter-tabs {
+  display   : flex;
+  gap       : 6px;
+  margin-bottom : 0.75rem;
+}
+.qs-filter-tabs .tab { font-size: 11px; }
+
+.qs-match-list {
+  max-height : 260px;
+  overflow-y : auto;
+  display    : flex;
+  flex-direction : column;
+  gap        : 6px;
+  margin-bottom : 1rem;
+}
+.qs-match-row {
+  display       : flex;
+  align-items   : center;
+  justify-content: space-between;
+  padding       : 10px 12px;
+  background    : var(--surface-1);
+  border        : 0.5px solid var(--border-light);
+  border-radius : var(--radius-md);
+  font-size     : 13px;
+  cursor        : pointer;
+  transition    : border-color 0.12s;
+}
+.qs-match-row:hover     { border-color: var(--accent-bright); }
+.qs-match-row.selected  { border-color: var(--accent-bright); background: var(--bg-success); }
+.qs-match-row .qs-court-tag {
+  font-size     : 10px;
+  color         : var(--text-tertiary);
+  background    : var(--bg-tertiary);
+  padding       : 2px 7px;
+  border-radius : 20px;
+}
+
+/* Large numeric inputs — thumb-friendly for court-side entry */
+.qs-score-grid {
+  display               : grid;
+  grid-template-columns : 1fr auto 1fr;
+  align-items            : center;
+  gap                    : 12px;
+  margin-bottom          : 1.25rem;
+}
+.qs-score-input {
+  width         : 100%;
+  height        : 72px;
+  font-size     : 34px;
+  font-weight   : 800;
+  text-align    : center;
+  border        : 1px solid var(--border-mid);
+  border-radius : var(--radius-lg);
+  background    : var(--surface-1);
+  color         : var(--text-primary);
+  outline       : none;
+  transition    : border-color 0.15s;
+}
+.qs-score-input:focus { border-color: var(--accent-bright); }
+.qs-score-team-label {
+  font-size     : 11px;
+  font-weight   : 600;
+  color         : var(--text-tertiary);
+  text-align    : center;
+  margin-bottom : 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.qs-save-btn {
+  width         : 100%;
+  height        : 46px;
+  font-size     : 14px;
+  font-weight   : 700;
+  color         : #1a1200;
+  background    : var(--accent-bright);
+  border        : none;
+  border-radius : var(--radius-md);
+  cursor        : pointer;
+}
+.qs-save-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.qs-save-toast {
+  font-size     : 12px;
+  color         : var(--text-success);
+  text-align    : center;
+  margin-top    : 8px;
+  display       : none;
+}
+.qs-save-toast.visible { display: block; }

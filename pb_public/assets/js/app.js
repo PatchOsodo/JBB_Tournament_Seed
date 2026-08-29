@@ -512,8 +512,7 @@ const App = {
         if (statusFilterEl) statusFilterEl.style.display = 'none';
 
         html += `
-        <div style="text-align:center;padding:2rem 1rem;background:var(--bg-primary);
-                    border:0.5px solid var(--border-light);border-radius:var(--radius-lg);">
+        <div class="directory-gateway-card">
           <div style="font-size:15px;font-weight:600;color:var(--text-primary);margin-bottom:6px;">
             Browse every tournament
           </div>
