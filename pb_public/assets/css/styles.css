@@ -223,7 +223,7 @@ input, button, select, textarea {
   background-position : center;
   background-size     : cover;
   background-repeat   : no-repeat;
-  background-color    : rgba(10,36,16,0.6);
+  background-color    : rgba(10,36,16,0.75);
   background-blend-mode: darken;
 }
 @media (max-width: 480px) {
