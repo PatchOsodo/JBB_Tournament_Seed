@@ -111,6 +111,11 @@ const TournamentPage = {
     const label = { pending: 'Not yet started', active: 'Ongoing', completed: 'Complete' }[t.status] || t.status;
     badge.textContent = label;
     badge.className   = `status-badge badge-${t.status}`;
+
+    const crumbs = [];
+    if (t.event_name) crumbs.push({ label: t.event_name, href: `tournament.html?event=${encodeURIComponent(t.event_name)}` });
+    crumbs.push({ label: t.name });
+    Shell.renderBreadcrumb('breadcrumb-nav', crumbs);
   },
 
   _renderNav(id) {
@@ -258,6 +263,8 @@ const TournamentPage = {
     const label = { pending: 'Not yet started', active: 'Ongoing', completed: 'Complete' }[summary.status] || summary.status;
     badge.textContent = label;
     badge.className   = `status-badge badge-${summary.status}`;
+
+    Shell.renderBreadcrumb('breadcrumb-nav', [{ label: summary.displayName }]);
 
     // Banner — reuses whichever category already has a banner_image, same
     // rule tournaments.js cards use. Gradient placeholder otherwise.

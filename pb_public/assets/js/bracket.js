@@ -203,6 +203,13 @@ const BracketPage = {
     if (badgeEl) { badgeEl.textContent = t.status; badgeEl.className = `status-badge badge-${t.status}`; }
     const tagEl = document.getElementById('bracket-tag');
     if (tagEl) tagEl.innerHTML = tournamentTagHtml(t);
+
+    const crumbs = [];
+    if (t.event_name) crumbs.push({ label: t.event_name, href: `tournament.html?event=${encodeURIComponent(t.event_name)}` });
+    crumbs.push({ label: t.name, href: `tournament.html?id=${t.id}` });
+    crumbs.push({ label: 'Bracket' });
+    Shell.renderBreadcrumb('breadcrumb-nav', crumbs);
+
     BracketPage._renderNav(t.id);
   },
 

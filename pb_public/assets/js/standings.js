@@ -146,6 +146,12 @@ const StandingsPage = {
     const tagEl = document.getElementById('st-tag');
     if (tagEl) tagEl.innerHTML = tournamentTagHtml(t);
 
+    const crumbs = [];
+    if (t.event_name) crumbs.push({ label: t.event_name, href: `tournament.html?event=${encodeURIComponent(t.event_name)}` });
+    crumbs.push({ label: t.name, href: `tournament.html?id=${id}` });
+    crumbs.push({ label: 'Standings' });
+    Shell.renderBreadcrumb('breadcrumb-nav', crumbs);
+
     Shell.renderCategoryNav('st-nav', id, 'standings');
   },
 

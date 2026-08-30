@@ -188,8 +188,16 @@ const Teams = {
       Shell.renderCategoryNav('teams-nav', Teams._scopedTournamentId, 'teams');
     }
 
+    const t = Teams._scopedTournament;
+    if (t) {
+      const crumbs = [];
+      if (t.event_name) crumbs.push({ label: t.event_name, href: `tournament.html?event=${encodeURIComponent(t.event_name)}` });
+      crumbs.push({ label: t.name, href: `tournament.html?id=${t.id}` });
+      crumbs.push({ label: 'Teams registry' });
+      Shell.renderBreadcrumb('breadcrumb-nav', crumbs);
+    }
+
     if (!el) return;
-    const t     = Teams._scopedTournament;
     const label = t ? (t.event_name || t.name) : 'this tournament';
 
     el.style.display = 'block';

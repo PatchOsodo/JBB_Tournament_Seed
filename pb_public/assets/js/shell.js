@@ -66,9 +66,18 @@ const Shell = {
       const html = await res.text();
       const wrap = document.createElement('div');
       wrap.innerHTML = html;
+
+      // The footer belongs at the true end of <body>, not the top with the
+      // rest of the partial (nav bars) — pull it out first so the generic
+      // insertBefore(firstChild) below doesn't also push it to the top.
+      const footer = wrap.querySelector('.site-footer');
+      if (footer) footer.remove();
+
       const frag = document.createDocumentFragment();
       [...wrap.children].forEach(el => frag.appendChild(el));
       document.body.insertBefore(frag, document.body.firstChild);
+
+      if (footer) document.body.appendChild(footer);
     } catch (e) {
       console.warn('Shell.injectNav failed', e);
     }
@@ -176,6 +185,27 @@ const Shell = {
         return `<span class="btn sm primary" style="pointer-events:none;">${escHtml(link.label)}</span>`;
       }
       return `<a class="btn sm ghost" href="${link.href(tournamentId)}">${escHtml(link.label)}</a>`;
+    }).join('');
+  },
+
+  // ── BREADCRUMB TRAIL ─────────────────────────────────────────────────
+  // Renders Home / Tournaments / ...extra crumbs. `extraCrumbs` is an
+  // array of { label, href }; the LAST crumb overall is always rendered
+  // as plain (non-link) text regardless of whether it has an href, since
+  // it represents "where the user is now." Every page that knows its own
+  // tournament/event context builds its own extraCrumbs array from data
+  // it's already fetched — no new API calls.
+  renderBreadcrumb(containerId, extraCrumbs = []) {
+    const el = document.getElementById(containerId);
+    if (!el) return;
+    const all = [{ label: 'Home', href: 'index.html' }, { label: 'Tournaments', href: 'tournaments.html' }, ...extraCrumbs];
+    el.innerHTML = all.map((c, i) => {
+      const isLast = i === all.length - 1;
+      const sep  = i > 0 ? '<span class="breadcrumb-sep">/</span>' : '';
+      const item = (c.href && !isLast)
+        ? `<a href="${c.href}" class="breadcrumb-link">${escHtml(c.label)}</a>`
+        : `<span class="breadcrumb-current">${escHtml(c.label)}</span>`;
+      return sep + item;
     }).join('');
   },
 

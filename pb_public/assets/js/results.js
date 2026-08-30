@@ -72,6 +72,12 @@ const ResultsPage = {
     const tagEl = document.getElementById('res-tag');
     if (tagEl) tagEl.innerHTML = tournamentTagHtml(t);
 
+    const crumbs = [];
+    if (t.event_name) crumbs.push({ label: t.event_name, href: `tournament.html?event=${encodeURIComponent(t.event_name)}` });
+    crumbs.push({ label: t.name, href: `tournament.html?id=${id}` });
+    crumbs.push({ label: 'Results' });
+    Shell.renderBreadcrumb('breadcrumb-nav', crumbs);
+
     Shell.renderCategoryNav('res-nav', id, 'results');
   },
 
