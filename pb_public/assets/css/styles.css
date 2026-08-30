@@ -218,7 +218,7 @@ input, button, select, textarea {
   padding             : 3rem 1.5rem;
   margin-top          : 1.25rem;
   margin-bottom       : 1.5rem;
-  text-align          : center;
+  text-align          : left;
   background-image    : url('../img/hero-img.jpg');
   background-position : center;
   background-size     : cover;
