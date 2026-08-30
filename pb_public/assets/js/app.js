@@ -144,7 +144,7 @@ const App = {
       <div class="other-active-meta">${teamCount} team${teamCount === 1 ? '' : 's'} · ${categoryCount} categor${categoryCount === 1 ? 'y' : 'ies'}</div>
     </a>`;
   },
-
+/**
   async _loadStandingsPreview(featuredTournament) {
     const el = document.getElementById('standings-preview-section');
     if (!el || !featuredTournament) return;
@@ -260,6 +260,73 @@ const App = {
       <div class="result-row ${wAway ? 'result-winner' : ''}"><span class="result-team">${escHtml(away)}</span><span class="score-display-md">${fx.away_score}</span></div>
       <div class="result-final-tag">Final</div>
     </div>`;
+  },**/
+
+  // Single-item teaser — one soonest scheduled game, one most recent
+  // result. Not a rail, not a dashboard: per the "if it needs tournament
+  // context it doesn't belong on the landing page" rule, this only needs
+  // to signal the site is live and hand off to the real page (fixtures/
+  // results), never to summarize a tournament in place.
+  async _loadActivityTeaser() {
+    const el = document.getElementById('activity-teaser');
+    if (!el) return;
+
+    try {
+      const [nextGame, lastResult] = await Promise.all([
+        pb.collection('fixtures').getList(1, 1, {
+          filter: `status="scheduled" && is_bye=false && home_team!="" && away_team!="" && scheduled_start_time!=""`,
+          sort: '+scheduled_start_time',
+          expand: 'home_team,away_team,tournament',
+          requestKey: null,
+        }),
+        pb.collection('fixtures').getList(1, 1, {
+          filter: `status="completed"`,
+          sort: '-updated',
+          expand: 'home_team,away_team,tournament',
+          requestKey: null,
+        }),
+      ]);
+
+      const next = nextGame.items[0] || null;
+      const last = lastResult.items[0] || null;
+      if (!next && !last) { el.innerHTML = ''; return; }
+
+      el.innerHTML = `<div class="activity-teaser-grid">
+      ${next ? App._activityCard('next', next) : ''}
+      ${last ? App._activityCard('result', last) : ''}
+      </div>`;
+    } catch (e) {
+      Logger.warn('_loadActivityTeaser failed', { error: e.message });
+    }
+  },
+
+  _activityCard(kind, f) {
+    const home = f.expand?.home_team?.name || 'TBD';
+    const away = f.expand?.away_team?.name || 'TBD';
+    const catName = f.expand?.tournament?.name || '';
+    const linkHref = `${kind === 'next' ? 'fixtures' : 'results'}.html?id=${f.tournament}`;
+
+    if (kind === 'next') {
+      const when = f.scheduled_start_time
+      ? new Date(f.scheduled_start_time).toLocaleString(undefined, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
+      : '';
+      return `<a href="${linkHref}" class="activity-card">
+      <div class="activity-card-label">📅 Next up</div>
+      <div class="activity-card-teams">${escHtml(home)} <span class="activity-card-vs">vs</span> ${escHtml(away)}</div>
+      <div class="activity-card-meta">${escHtml(catName)}${when ? ' · ' + escHtml(when) : ''}</div>
+      </a>`;
+    }
+
+    const wHome = f.winner === f.home_team;
+    return `<a href="${linkHref}" class="activity-card">
+    <div class="activity-card-label">🏀 Latest result</div>
+    <div class="activity-card-teams">
+    <span class="${wHome ? 'activity-winner' : ''}">${escHtml(home)}</span> ${f.home_score}
+    <span class="activity-card-vs">–</span>
+    ${f.away_score} <span class="${!wHome ? 'activity-winner' : ''}">${escHtml(away)}</span>
+    </div>
+    <div class="activity-card-meta">${escHtml(catName)}</div>
+    </a>`;
   },
 
   async _loadRecentChampions() {

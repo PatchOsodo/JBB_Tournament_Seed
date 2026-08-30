@@ -159,12 +159,12 @@ input, button, select, textarea {
 
 .app {
   width     : 100%;
-  max-width : 720px;
+  max-width : 960px;
 }
 
 /* Bracket page gets a wider canvas */
 .app.wide {
-  max-width : 1100px;
+  max-width : 1200px;
 }
 
 /* =============================================================================
@@ -211,6 +211,23 @@ input, button, select, textarea {
   color               : #fff;
   text-align          : center;
 }
+.hero-section {
+  position            : relative;
+  overflow            : hidden;
+  border-radius       : var(--radius-xl);
+  padding             : 3rem 1.5rem;
+  margin-top          : 1.25rem;
+  margin-bottom       : 1.5rem;
+  text-align          : center;
+  background          :
+    linear-gradient(180deg, rgba(10,36,16,0.35) 0%, rgba(10,36,16,0.82) 100%),
+    url('../img/hero-img.jpg') center / cover no-repeat;
+}
+
+@media (max-width: 480px) {
+  .hero-section { padding: 2rem 1rem; }
+}
+
 .hero-pretitle {
   font-size      : 12px;
   font-weight    : 600;
