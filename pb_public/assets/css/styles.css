@@ -230,19 +230,6 @@ input, button, select, textarea {
   .hero-section { padding: 2rem 1rem; }
 }
 
-#hero-featured-tournament {
-  position            : relative;
-  overflow            : hidden;
-  background-image    : url('../img/hero-img.jpg');
-  background-position : center;
-  background-size     : cover;
-  background-repeat   : no-repeat;
-  background-color    : rgba(10,36,16,0.65);
-  background-blend-mode: darken;
-}
-@media (max-width: 480px) {
-  #hero-featured-tournament { padding: 2rem 1rem; }
-}
 .hero-pretitle {
   font-size      : 12px;
   font-weight    : 600;
@@ -2541,6 +2528,11 @@ flex-shrink: 0;
  *  ============================================================================= */
 .featured-tournament-card {
   position            : relative;
+  overflow            : hidden;
+  background-image    : url('../img/hero-img.jpg');
+  background-repeat   : no-repeat;
+  background-color    : rgba(10,36,16,0.65);
+  background-blend-mode: darken;
   background          : linear-gradient(135deg, #0a2410 0%, #123018 100%); /* fixed, theme-independent */
   background-size     : cover;
   background-position : center;
