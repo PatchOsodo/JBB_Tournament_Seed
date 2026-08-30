@@ -226,11 +226,9 @@ input, button, select, textarea {
   background-color    : rgba(10,36,16,0.6);
   background-blend-mode: darken;
 }
-
 @media (max-width: 480px) {
   .hero-section { padding: 2rem 1rem; }
 }
-
 .hero-pretitle {
   font-size      : 12px;
   font-weight    : 600;
