@@ -90,22 +90,22 @@ const App = {
     }
 
     const linkHref = bestGroup.length === 1
-      ? `bracket.html?id=${bestGroup[0].id}`
-      : `tournament.html?event=${encodeURIComponent(displayName)}`;
+    ? `bracket.html?id=${bestGroup[0].id}`
+    : `tournament.html?event=${encodeURIComponent(displayName)}`;
     const statusLabel = active.length ? 'Ongoing' : 'Coming up';
 
     const bannerOwner = bestGroup.find(t => t.banner_image) || null;
     const bannerStyle = bannerOwner
-      ? `style="background-image:url('${pb.files.getURL(bannerOwner, bannerOwner.banner_image, { thumb: '1200x360' })}')"`
-      : '';
+    ? `style="--card-bg-image:url('${pb.files.getURL(bannerOwner, bannerOwner.banner_image, { thumb: '1200x360' })}')"`
+    : '';
 
     // No standings preview here — a ranking table is inherently relational
     // (1st place only means something once you know the pool), so it
     // needs tournament context the homepage visitor doesn't have yet.
     // Lives on tournament.html/standings.html instead.
     el.innerHTML = `
-      <div class="featured-tournament-card">
-        <div class="featured-tournament-eyebrow">${escHtml(statusLabel)}</div>
+    <div class="featured-tournament-card" ${bannerStyle}>
+    <div class="featured-tournament-eyebrow">${escHtml(statusLabel)}</div>
         <div class="featured-tournament-name">${escHtml(displayName)}</div>
         <div class="featured-tournament-stats">
           <div><span class="score-display-md">${teamCount}</span><span class="featured-stat-label">Teams</span></div>

@@ -3094,12 +3094,31 @@ white-space : nowrap;
   width         : fit-content;
 }
 .directory-gateway-card {
-  text-align    : center;
-  padding       : 2.25rem 1.25rem;
-  background    : var(--surface-1);
-  border        : 1px solid var(--surface-2-border);
-  border-radius : var(--radius-lg);
-  box-shadow    : 0 4px 20px rgba(0,0,0,0.12);
+  position             : relative;
+  overflow             : hidden;
+  text-align           : center;
+  padding              : 2.25rem 1.25rem;
+  border               : 1px solid var(--surface-2-border);
+  border-radius        : var(--radius-lg);
+  box-shadow           : 0 4px 20px rgba(0,0,0,0.12);
+  background-image     : url('../img/tourn-bg.jpg');
+  background-size      : cover;
+  background-position  : center;
+  background-repeat    : no-repeat;
+}
+.directory-gateway-card::before {
+  content    : '';
+  position   : absolute;
+  inset      : 0;
+  background : rgba(10,34,16,0.82);
+}
+.directory-gateway-card > * {
+  position : relative;
+  z-index  : 1;
+}
+.directory-gateway-card > div,
+.directory-gateway-card > p {
+  color : #f9f6ee !important;
 }
 /* =============================================================================
  *  SCOREKEEPER — QUICK SCORE ENTRY (operator-only, never shown to guests)
