@@ -219,9 +219,11 @@ input, button, select, textarea {
   margin-top          : 1.25rem;
   margin-bottom       : 1.5rem;
   text-align          : center;
-  background          :
-    rgba(10,36,16,0.6),
-    url('../img/hero-img.jpg') center / cover no-repeat;
+  background-image    : url('../img/hero-img.jpg');
+  background-position : center;
+  background-size     : cover;
+  background-repeat   : no-repeat;
+  background-color    : rgba(10,36,16,0.6);
   background-blend-mode: darken;
 }
 
