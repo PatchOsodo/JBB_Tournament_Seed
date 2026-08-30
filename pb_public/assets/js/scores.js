@@ -203,7 +203,14 @@ const Scores = {
             picker.innerHTML = Scores.tournaments.map(t =>
             `<option value="${t.id}">${escHtml(t.event_name ? t.event_name + ' — ' + t.name : t.name)}${t.status === 'completed' ? ' (completed)' : ''}</option>`
             ).join('');
-            Scores.currentTournamentId = Scores.tournaments[0].id;
+
+            // Deep-link from manage.html's "Score this tournament" button — falls
+            // back to the first tournament in the list if the id is missing,
+            // unknown, or this page was opened directly (e.g. from the nav menu).
+            const requestedId = new URLSearchParams(window.location.search).get('tournament');
+            const requestedExists = requestedId && Scores.tournaments.some(t => t.id === requestedId);
+            Scores.currentTournamentId = requestedExists ? requestedId : Scores.tournaments[0].id;
+            picker.value = Scores.currentTournamentId;
             await Scores.load();
         } catch (e) {
             _showErr(`Could not load tournaments: ${e.message}`);

@@ -814,7 +814,7 @@ const Manage = {
         <a class="btn ghost" href="fixtures.html?id=${t.id}" target="_blank">View schedule →</a>
         ${t.format !== 'round_robin' ? `<a class="btn ghost" href="bracket.html?id=${t.id}" target="_blank">View bracket →</a>` : ''}
         ${t.format !== 'elimination' ? `<a class="btn ghost" href="standings.html?id=${t.id}" target="_blank">View standings →</a>` : ''}
-        <a class="btn primary" href="scores.html">⚡ Score this tournament</a>`;
+        <a class="btn primary" href="scores.html?tournament=${t.id}">⚡ Score this tournament</a>`;
 
         const regenBtn = document.getElementById('btn-hub-regenerate');
         if (regenBtn) regenBtn.style.display = Manage._hasAnyResult() ? 'none' : '';

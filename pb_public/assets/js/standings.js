@@ -190,15 +190,27 @@ const StandingsPage = {
     wrap.innerHTML = StandingsPage._table(null, rows, false);
   },
 
+  // Small gold/silver/bronze circle for the top 3 — same palette already
+  // used elsewhere in the app (placementBadge in stats.js/app.js/teams.js),
+  // so a 1st/2nd/3rd cue reads consistently across pages.
+  _rankBadge(rank) {
+    const bg  = rank === 1 ? '#fef3c7' : rank === 2 ? '#f1f5f9' : '#fef3c7';
+    const col = rank === 1 ? '#f59e0b' : rank === 2 ? '#94a3b8' : '#b45309';
+    return `<span style="display:inline-flex;align-items:center;justify-content:center;
+                         width:20px;height:20px;border-radius:50%;font-size:11px;
+                         font-weight:700;background:${bg};color:${col};">${rank}</span>`;
+  },
+
   // Same table markup/inline styling as the admin app's _renderGroupStandings
   // in app.js, for visual consistency between the admin and public views.
   _table(groupLabel, rows, showAdvancing) {
     const tableRows = rows.map((s, i) => {
-      const adv = showAdvancing && i < 2;
+      const adv  = showAdvancing && i < 2;
+      const rank = i + 1;
       return `<tr style="${adv ? 'background:var(--bg-success)' : ''}">
         <td style="padding:6px 8px;font-size:12px;font-weight:500;
                    color:${adv ? 'var(--accent)' : 'var(--text-secondary)'}">
-          ${i + 1}${adv ? ' ✓' : ''}
+          ${rank <= 3 ? StandingsPage._rankBadge(rank) : rank}${adv ? ' ✓' : ''}
         </td>
         <td style="padding:6px 8px;font-size:13px;font-weight:${adv ? '600' : '400'}"
             ${s.fullName && s.fullName !== s.name ? `title="${escHtml(s.fullName)}"` : ''}>

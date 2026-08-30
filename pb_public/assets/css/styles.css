@@ -3300,3 +3300,26 @@ max-width : 420px;
   color     : var(--text-tertiary);
   font-size : 14px;
 }
+/* =============================================================================
+ *  SURFACE LEVEL APPLICATION — Rule A follow-through
+ *  Retargets existing "card" components onto --surface-1 instead of the
+ *  literal --bg-primary they were declared with. Identical value in light
+ *  mode (no visual change there); a deliberate lighter offset from the
+ *  page canvas in dark mode, where --surface-1 and --bg-primary now
+ *  diverge. Appended (not edited in place) so nothing upstream in the
+ *  cascade needs to be touched or re-verified.
+ *  ============================================================================= */
+.card,
+.tournament-card,
+.champion-card,
+.upcoming-game-card,
+.other-active-card,
+.result-card,
+.standings-preview-card,
+.team-detail,
+.login-card,
+.modal,
+.event-category-chip,
+.tournament-item {
+  background : var(--surface-1);
+}
