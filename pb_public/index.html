@@ -11,7 +11,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/css/styles.css?v=3.2.0">
+<link rel="stylesheet" href="assets/css/styles.css?v=3.3.0">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#1a5c28">
 <meta name="description" content="{{DESCRIPTION}}">
@@ -44,6 +44,16 @@ if ('serviceWorker' in navigator) {
     </div>
   </div>
 
+  <!-- ═══════════════════════════════════════════════════════════════════
+       FUNNEL, TOP TO BOTTOM:
+       Identity → Featured tournament → Other active → activity teaser
+       (single-item, not a dashboard) → how it works → directory (the
+       actual exit) → trust strip (identity reinforcement, demoted).
+       Standings/brackets/categories/teams never appear here — they all
+       require tournament context the visitor doesn't have yet, and
+       already live on tournament.html / standings.html / bracket.html.
+       ═══════════════════════════════════════════════════════════════ -->
+
   <div class="hero-section hero-fade-in">
     <div class="hero-pretitle">JB254 TOURNAMENTS</div>
     <h2 class="hero-headline">Follow the Game.</h2>
@@ -57,15 +67,39 @@ if ('serviceWorker' in navigator) {
 
   <div id="hero-featured-tournament" class="hero-fade-in"></div>
   <div id="other-active-tournaments" class="hero-fade-in"></div>
-  <div id="upcoming-games-section" class="hero-fade-in"></div>
-  <div id="latest-results-section" class="hero-fade-in"></div>
-  <div id="standings-preview-section" class="hero-fade-in"></div>
-  <div id="hero-stats-banner" class="hero-fade-in"></div>
-  <div id="recent-champions-section" class="hero-fade-in"></div>
 
-  <!-- Guest-only home: favourites (if signed in) + directory gateway.
-       No admin toolbar, no authoring screens — those live in manage.html,
-       reachable only via admin.html, never from this page. -->
+  <!-- Single-item teaser, not a rail — one soonest game, one latest
+       result. Enough to signal the site is live; anything deeper (a full
+       schedule, a standings table) needs the visitor to have picked a
+       tournament first. -->
+  <div id="activity-teaser" class="hero-fade-in"></div>
+
+  <!-- How it works — reinforces the funnel itself, sits right before the
+       directory exit it's pointing at. -->
+  <div class="how-it-works hero-fade-in">
+    <div class="section-heading">How it works</div>
+    <div class="how-it-works-steps">
+      <div class="how-it-works-step">
+        <div class="how-it-works-num">01</div>
+        <div class="how-it-works-title">Choose a tournament</div>
+        <div class="how-it-works-desc">Browse Junior Ballers competitions, active and upcoming.</div>
+      </div>
+      <div class="how-it-works-arrow">→</div>
+      <div class="how-it-works-step">
+        <div class="how-it-works-num">02</div>
+        <div class="how-it-works-title">Follow the competition</div>
+        <div class="how-it-works-desc">Explore fixtures, standings, and the bracket.</div>
+      </div>
+      <div class="how-it-works-arrow">→</div>
+      <div class="how-it-works-step">
+        <div class="how-it-works-num">03</div>
+        <div class="how-it-works-title">Keep up with results</div>
+        <div class="how-it-works-desc">Check completed games as they come in.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- The actual exit — favourites (if signed in) + the directory gateway. -->
   <div class="screen active" id="screen-home">
 
     <div class="section-heading-row">
@@ -86,6 +120,14 @@ if ('serviceWorker' in navigator) {
       <div class="skeleton-card"></div>
       <div class="skeleton-card"></div>
     </div>
+  </div>
+
+  <!-- Trust strip — demoted identity reinforcement (real counts + recent
+       champions), not a dashboard section. Sits after the exit on
+       purpose: it's not meant to compete with the funnel above it. -->
+  <div class="trust-strip hero-fade-in">
+    <div id="hero-stats-banner"></div>
+    <div id="recent-champions-section"></div>
   </div>
 
 </div><!-- /.app -->

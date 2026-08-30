@@ -57,10 +57,9 @@ const App = {
       Logger.warn('_loadHeroContent stats failed', { error: e.message });
     }
 
-    App._loadUpcomingGames();
     App._loadFeaturedTournament();
     App._loadOtherActiveTournaments();
-    App._loadHeroMatchSnippet();
+    App._loadActivityTeaser();
     App._loadRecentChampions();
   },
 
@@ -100,6 +99,10 @@ const App = {
       ? `style="background-image:url('${pb.files.getURL(bannerOwner, bannerOwner.banner_image, { thumb: '1200x360' })}')"`
       : '';
 
+    // No standings preview here — a ranking table is inherently relational
+    // (1st place only means something once you know the pool), so it
+    // needs tournament context the homepage visitor doesn't have yet.
+    // Lives on tournament.html/standings.html instead.
     el.innerHTML = `
       <div class="featured-tournament-card">
         <div class="featured-tournament-eyebrow">${escHtml(statusLabel)}</div>
@@ -111,7 +114,6 @@ const App = {
         </div>
         <a href="${linkHref}" class="btn primary featured-tournament-cta">Follow Tournament</a>
       </div>`;
-    App._loadStandingsPreview(bestGroup[0]);
   },
 
   _loadOtherActiveTournaments() {

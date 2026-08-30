@@ -3323,3 +3323,119 @@ max-width : 420px;
 .tournament-item {
   background : var(--surface-1);
 }
+
+/* =============================================================================
+ *  LANDING PAGE RESTRUCTURE — activity teaser, how-it-works, trust strip
+ *  Replaces the old upcoming-games-grid / results-rail / standings-preview
+ *  sections with a single compact teaser, adds the missing "how it works"
+ *  funnel step, and demotes stats/champions below the directory exit.
+ *  ============================================================================= */
+
+.activity-teaser-grid {
+  display               : grid;
+  grid-template-columns : repeat(auto-fit, minmax(240px, 1fr));
+  gap                    : 12px;
+  margin-bottom          : 1.875rem;
+}
+.activity-card {
+  display         : block;
+  background      : var(--surface-1);
+  border          : 0.5px solid var(--border-light);
+  border-radius   : var(--radius-lg);
+  padding         : 0.9rem 1.1rem;
+  text-decoration : none;
+  transition      : border-color 0.15s, box-shadow 0.15s;
+}
+.activity-card:hover {
+  border-color : var(--secondary, #d4a017);
+  box-shadow   : 0 4px 14px rgba(10,34,16,0.10);
+}
+.activity-card-label {
+  font-size      : 10px;
+  font-weight    : 700;
+  text-transform : uppercase;
+  letter-spacing : 0.06em;
+  color          : var(--text-tertiary);
+  margin-bottom  : 6px;
+}
+.activity-card-teams {
+  font-size   : 14px;
+  font-weight : 600;
+  color       : var(--text-primary);
+}
+.activity-card-vs {
+  font-size   : 11px;
+  font-weight : 400;
+  color       : var(--text-tertiary);
+  margin      : 0 4px;
+}
+.activity-winner { color: var(--accent); font-weight: 800; }
+.activity-card-meta {
+  font-size  : 11px;
+  color      : var(--text-tertiary);
+  margin-top : 4px;
+}
+
+.how-it-works {
+  margin-bottom : 1.875rem;
+}
+.how-it-works-steps {
+  display         : flex;
+  align-items     : stretch;
+  gap             : 10px;
+  flex-wrap       : wrap;
+}
+.how-it-works-step {
+  flex          : 1;
+  min-width     : 160px;
+  background    : var(--surface-1);
+  border        : 0.5px solid var(--border-light);
+  border-radius : var(--radius-lg);
+  padding       : 1rem 1.1rem;
+}
+.how-it-works-num {
+  font-size   : 11px;
+  font-weight : 800;
+  color       : var(--accent-bright, var(--accent));
+  margin-bottom: 4px;
+}
+.how-it-works-title {
+  font-size     : 13px;
+  font-weight   : 700;
+  color         : var(--text-primary);
+  margin-bottom : 4px;
+}
+.how-it-works-desc {
+  font-size   : 12px;
+  color       : var(--text-tertiary);
+  line-height : 1.5;
+}
+.how-it-works-arrow {
+  display     : flex;
+  align-items : center;
+  justify-content: center;
+  font-size   : 16px;
+  color       : var(--text-tertiary);
+  flex        : 0 0 auto;
+}
+@media (max-width: 640px) {
+  .how-it-works-steps { flex-direction: column; }
+  .how-it-works-arrow { transform: rotate(90deg); }
+}
+
+/* Trust strip — demoted identity reinforcement below the directory exit,
+ *  not competing with it. Both children (#hero-stats-banner,
+ *  #recent-champions-section) are populated by existing app.js functions
+ *  unchanged; this only restyles their shared wrapper. */
+.trust-strip {
+  margin-top    : 2.5rem;
+  padding-top   : 1.5rem;
+  border-top    : 0.5px solid var(--border-light);
+}
+.trust-strip .stats-banner,
+.trust-strip .champions-section {
+  margin-bottom : 1rem;
+}
+.trust-strip .champions-heading {
+  font-size : 13px;
+}
