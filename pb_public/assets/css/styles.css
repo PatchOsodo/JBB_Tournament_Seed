@@ -250,14 +250,14 @@ input, button, select, textarea {
   font-size     : 15px;
   color         : #d9e5da;
   max-width     : 520px;
-  margin        : 0 auto 1.25rem;
+  margin        : 0 0 1.25rem;
   line-height   : 1.55;
 }
 
 .hero-ctas {
   display        : flex;
   gap            : 10px;
-  justify-content: center;
+  justify-content: flex-start;
   flex-wrap      : wrap;
 }
 
