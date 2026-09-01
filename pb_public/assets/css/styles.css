@@ -3428,6 +3428,20 @@ max-width : 420px;
   text-decoration : none;
   transition      : border-color 0.15s, box-shadow 0.15s;
 }
+.activity-card.is-ongoing .activity-card-label {
+  color        : var(--accent-bright);
+  display      : inline-flex;
+  align-items  : center;
+  gap          : 6px;
+}
+.activity-card.is-ongoing .activity-card-label::before {
+  content       : '';
+  width         : 6px;
+  height        : 6px;
+  border-radius : 50%;
+  background    : currentColor;
+  animation     : pulse-glow 1.6s ease-in-out infinite; /* already defined in styles.css */
+}
 .activity-card:hover {
   border-color : var(--secondary, #d4a017);
   box-shadow   : 0 4px 14px rgba(10,34,16,0.10);
